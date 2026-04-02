@@ -1,5 +1,6 @@
 package com.uade.tpejemplo.service;
 
+<<<<<<< gian
 import com.uade.tpejemplo.dto.request.SolicitudAumentoRequest;
 import com.uade.tpejemplo.dto.response.SolicitudAumentoResponse;
 
@@ -13,6 +14,10 @@ public interface SolicitudAumentoService {
 
     SolicitudAumentoResponse buscarSolicitudPorId(Long id);
 
+=======
+public interface SolicitudAumentoService {
+
+>>>>>>> main
     SolicitudAumentoResponse aprobarSolicitud(Long id);
 
     SolicitudAumentoResponse rechazarSolicitud(Long id);
