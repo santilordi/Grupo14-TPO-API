@@ -23,7 +23,7 @@ public class SolicitudAumentoServiceImpl implements SolicitudAumentoService {
     public SolicitudAumentoResponse aprobarSolicitud(Long id) {
         SolicitudAumento solicitud = buscarSolicitudPorId(id);
 
-        if (solicitud.getEstado() != EstadoSolicitudCredito.PENDIENTE){
+        if (solicitud.getEstado() != EstadoSolicitudCredito.PENDIENTE) {
             throw new BusinessException("Solo se pueden aprobar solicitudes en estado PENDIENTE.");
         }
 
