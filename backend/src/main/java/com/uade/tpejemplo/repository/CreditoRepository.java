@@ -11,3 +11,5 @@ public interface CreditoRepository extends JpaRepository<Credito, Long> {
 
     List<Credito> findByClienteDni(String dni);
 }
+
+// COMMENT PRUEBA 3
