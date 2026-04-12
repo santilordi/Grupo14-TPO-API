@@ -10,6 +10,7 @@ import com.uade.tpejemplo.service.ClienteService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @Service
@@ -23,7 +24,7 @@ public class ClienteServiceImpl implements ClienteService {
         if (clienteRepository.existsByDni(request.getDni())) {
             throw new BusinessException("Ya existe un cliente con DNI: " + request.getDni());
         }
-        Cliente cliente = new Cliente(request.getDni(), request.getNombre(), null);
+        Cliente cliente = new Cliente(request.getDni(), request.getNombre(), null, BigDecimal.ZERO);
         clienteRepository.save(cliente);
         return toResponse(cliente);
     }
@@ -43,6 +44,6 @@ public class ClienteServiceImpl implements ClienteService {
     }
 
     private ClienteResponse toResponse(Cliente cliente) {
-        return new ClienteResponse(cliente.getDni(), cliente.getNombre());
+        return new ClienteResponse(cliente.getDni(), cliente.getNombre(), cliente.getLimiteCredito());
     }
 }

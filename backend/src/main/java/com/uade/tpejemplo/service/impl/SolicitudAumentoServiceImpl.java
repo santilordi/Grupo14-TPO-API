@@ -12,7 +12,7 @@ import com.uade.tpejemplo.dto.request.SolicitudAumentoRequest;
 import com.uade.tpejemplo.dto.response.SolicitudAumentoResponse;
 import com.uade.tpejemplo.model.EstadoSolicitudCredito;
 import java.util.List;
-import java.util.stream.Collectors;
+
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,8 +25,8 @@ public class SolicitudAumentoServiceImpl implements SolicitudAumentoService {
     private final ClienteRepository clienteRepository;
     private final CreditoRepository creditoRepository;
 
-    @Override
     @Transactional
+    @Override
     public SolicitudAumentoResponse aprobarSolicitud(Long id) {
         // Buscamos la ENTIDAD directamente para que sea compatible con los métodos de abajo
         SolicitudAumento solicitud = solicitudAumentoRepository.findById(id)
@@ -47,8 +47,8 @@ public class SolicitudAumentoServiceImpl implements SolicitudAumentoService {
         return mapearAResponse(solicitud);
     }
 
-    @Override
     @Transactional
+    @Override
     public SolicitudAumentoResponse rechazarSolicitud(Long id) {
         // Buscamos la ENTIDAD directamente acá también
         SolicitudAumento solicitud = solicitudAumentoRepository.findById(id)
@@ -64,7 +64,7 @@ public class SolicitudAumentoServiceImpl implements SolicitudAumentoService {
         return mapearAResponse(solicitud);
     }
 
-    @Override // Para que sepa que cumple con la interfaz
+    @Override
     public SolicitudAumentoResponse buscarSolicitudPorId(Long id) {
         // Este método devuelve el Response (DTO) tal cual pide la Interfaz
         SolicitudAumento solicitud = solicitudAumentoRepository.findById(id)
@@ -79,11 +79,11 @@ public class SolicitudAumentoServiceImpl implements SolicitudAumentoService {
     @Transactional
     public SolicitudAumentoResponse crearSolicitud(SolicitudAumentoRequest request) {
         // 1. Convertimos el Long a String de forma explícita
-        String dniBuscado = String.valueOf(request.getClienteId());
+        String dniBuscado = String.valueOf(request.getDniCliente());
 
         // 2. Buscamos al cliente en el repositorio
         Cliente cliente = clienteRepository.findById(dniBuscado)
-                .orElseThrow(() -> new ResourceNotFoundException("Cliente", "DNI", request.getClienteId()));
+                .orElseThrow(() -> new ResourceNotFoundException("Cliente", "DNI", request.getDniCliente()));
 
         // 3. Creamos la solicitud
         SolicitudAumento nuevaSolicitud = new SolicitudAumento();
@@ -110,7 +110,6 @@ public class SolicitudAumentoServiceImpl implements SolicitudAumentoService {
         return SolicitudAumentoResponse.builder()
                 .id(solicitud.getId())
                 .dniCliente(solicitud.getCliente().getDni())
-                .nombreCliente(solicitud.getCliente().getNombre())
                 .montoSolicitado(solicitud.getMontoSolicitado())
                 .fechaSolicitud(solicitud.getFechaSolicitud())
                 .estado(String.valueOf(solicitud.getEstado()))

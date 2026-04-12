@@ -1,5 +1,7 @@
 package com.uade.tpejemplo.controller;
 
+import com.uade.tpejemplo.dto.request.SolicitudAumentoRequest;
+import com.uade.tpejemplo.dto.response.SolicitudAumentoResponse;
 import com.uade.tpejemplo.service.SolicitudAumentoService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
