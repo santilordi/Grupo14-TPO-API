@@ -1,4 +1,4 @@
-# Grupo 14 - TPO: Autorización de Límite de Crédito 💳
+# Grupo 14 - TPO: Autorización de Límite de Crédito 
 
 1. ## Descripción del Módulo
 
