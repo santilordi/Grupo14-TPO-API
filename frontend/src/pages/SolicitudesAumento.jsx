@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { listarSolicitudes, listarPendientes } from '../api/solicitudes';
-import './SolicitudesAumento.css';
+import '../styles/SolicitudesAumento.css';
 
 export default function SolicitudesAumento() {
   const [lista, setLista] = useState([]);
