@@ -13,6 +13,7 @@ import com.uade.tpejemplo.dto.response.SolicitudAumentoResponse;
 import com.uade.tpejemplo.model.EstadoSolicitudCredito;
 import java.util.List;
 
+import java.time.LocalDate;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -89,6 +90,7 @@ public class SolicitudAumentoServiceImpl implements SolicitudAumentoService {
         SolicitudAumento nuevaSolicitud = new SolicitudAumento();
         nuevaSolicitud.setCliente(cliente);
         nuevaSolicitud.setMontoSolicitado(request.getMontoSolicitado());
+        nuevaSolicitud.setFechaSolicitud(LocalDate.now());
         nuevaSolicitud.setEstado(EstadoSolicitudCredito.PENDIENTE);
 
         // 4. Guardamos y devolvemos la respuesta mapeada
