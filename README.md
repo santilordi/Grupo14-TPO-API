@@ -27,18 +27,25 @@ tpejemplo/
 ├── backend/               → Proyecto Spring Boot (Maven)
 │   └── src/main/java/com/uade/tpejemplo/
 │       ├── config/        → SecurityConfig (JWT + stateless)
-│       ├── controller/    → AuthController, ClienteController, CreditoController, CobranzaController
+│       ├── controller/    → AuthController, ClienteController, CreditoController,
+│       │                     CobranzaController, SolicitudAumentoController
 │       ├── dto/
-│       │   ├── request/   → ClienteRequest, CreditoRequest, CobranzaRequest, LoginRequest, RegisterRequest
-│       │   └── response/  → ClienteResponse, CreditoResponse, CuotaResponse, CobranzaResponse, AuthResponse
-│       ├── exception/     → ResourceNotFoundException, BusinessException, GlobalExceptionHandler
-│       ├── model/         → Cliente, Credito, Cuota, CuotaId, Cobranza, Usuario, Rol
-│       ├── repository/    → ClienteRepository, CreditoRepository, CuotaRepository, CobranzaRepository, UsuarioRepository
+│       │   ├── request/   → ClienteRequest, CreditoRequest, CobranzaRequest,
+│       │   │                 LoginRequest, RegisterRequest, SolicitudAumentoRequest
+│       │   └── response/  → ClienteResponse, CreditoResponse, CuotaResponse,
+│       │                     CobranzaResponse, AuthResponse, SolicitudAumentoResponse
+│       ├── exception/     → ResourceNotFoundException, BusinessException,
+│       │                     GlobalExceptionHandler, ErrorResponse
+│       ├── model/         → Cliente, Credito, Cuota, CuotaId, Cobranza, Usuario, Rol,
+│       │                     SolicitudAumento, EstadoSolicitudCredito
+│       ├── repository/    → ClienteRepository, CreditoRepository, CuotaRepository,
+│       │                     CobranzaRepository, UsuarioRepository, SolicitudAumentoRepository
 │       ├── security/      → JwtUtil, JwtAuthFilter, UserDetailsServiceImpl
 │       └── service/
 │           ├── ClienteService / ClienteServiceImpl
 │           ├── CreditoService / CreditoServiceImpl
-│           └── CobranzaService / CobranzaServiceImpl
+│           ├── CobranzaService / CobranzaServiceImpl
+│           └── SolicitudAumentoService / SolicitudAumentoServiceImpl
 └── frontend/              → Proyecto React + Vite
     └── src/
         ├── api/           → apiClient.js, auth.js, clientes.js, creditos.js, cobranzas.js
@@ -62,6 +69,7 @@ tpejemplo/
 |-------|------|-------------|
 | dni | String (PK) | DNI del cliente |
 | nombre | String | Nombre completo |
+| limiteCredito | BigDecimal | Límite actual autorizado |
 
 ### Credito
 | Campo | Tipo | Descripción |
@@ -88,6 +96,15 @@ tpejemplo/
 | id | Long (PK, auto) | Identificador |
 | cuota | FK → Cuota | Cuota que se está pagando |
 | importe | BigDecimal | Importe cobrado |
+
+### SolicitudAumento
+| Campo | Tipo | Descripción |
+|-------|------|-------------|
+| id | Long (PK, auto) | Identificador de la solicitud |
+| cliente | FK → Cliente | Cliente que solicita el aumento |
+| montoSolicitado | BigDecimal | Monto de límite de crédito deseado |
+| fechaSolicitud | LocalDate | Fecha de creación de la solicitud |
+| estado | Enum (String) | PENDIENTE, APROBADO o RECHAZADO |
 
 ### Usuario
 | Campo | Tipo | Descripción |
@@ -127,6 +144,16 @@ tpejemplo/
 | POST | `/api/cobranzas` | Registrar pago de una cuota |
 | GET | `/api/cobranzas/credito/{idCredito}` | Cobranzas de un crédito |
 
+### Solicitudes de Aumento (requiere JWT)
+| Método | Endpoint | Descripción |
+|--------|----------|-------------|
+| POST | `/api/solicitudes` | Crear una nueva solicitud de aumento |
+| GET | `/api/solicitudes` | Listar todas las solicitudes |
+| GET | `/api/solicitudes/pendientes` | Listar solicitudes pendientes |
+| GET | `/api/solicitudes/{id}` | Buscar solicitud por ID |
+| PATCH | `/api/solicitudes/{id}/aprobar` | Aprobar solicitud y actualizar límite del cliente |
+| PATCH | `/api/solicitudes/{id}/rechazar` | Rechazar solicitud |
+
 ---
 
 ## Seguridad JWT
@@ -161,8 +188,10 @@ Todos los errores devuelven un `ErrorResponse` uniforme:
 
 Excepciones manejadas por `@RestControllerAdvice`:
 - `ResourceNotFoundException` → 404
+- `EntityNotFoundException` (JPA) → 404
 - `BusinessException` → 400 (reglas de negocio)
 - `MethodArgumentNotValidException` → 400 (validaciones `@Valid`)
+- `DataIntegrityViolationException` → 409 (violaciones de integridad)
 - `Exception` genérica → 500
 
 ---
@@ -217,6 +246,40 @@ npm install
 npm run dev
 # Corre en http://localhost:5173
 ```
+
+---
+
+## Módulo 2 — Autorización de Límite de Crédito
+
+Este módulo centraliza la lógica de negocio para la autorización de límites de crédito mediante una API REST en Spring Boot. Su objetivo es gestionar el ciclo de vida de las solicitudes de aumento: desde la recepción de la petición por parte de un cliente, hasta su listado, evaluación (aprobación/rechazo) y actualización del límite de crédito disponible.
+
+### DTOs del Módulo
+
+**SolicitudAumentoRequest**
+| Campo | Tipo | Descripción |
+|-------|------|-------------|
+| dniCliente | String | DNI del cliente que solicita el aumento |
+| montoSolicitado | BigDecimal | Nuevo límite deseado |
+
+**SolicitudAumentoResponse**
+| Campo | Tipo | Descripción |
+|-------|------|-------------|
+| id | Long | Identificador de la solicitud |
+| dniCliente | String | DNI del cliente |
+| montoSolicitado | BigDecimal | Monto solicitado |
+| estado | String | Estado actual (PENDIENTE, APROBADO, RECHAZADO) |
+| fechaSolicitud | LocalDate | Fecha de creación |
+
+### Distribución de Tareas
+
+| Integrante | Tarea Principal | Descripción |
+|------------|----------------|-------------|
+| Nahuel D'Angelo | Persistencia y Modelos | Entidad `SolicitudAumento`, Enumerados (`EstadoSolicitudCredito`) y Repositorios JPA |
+| Manuel Herrera | Lógica Core de Crédito | Validaciones y reglas de negocio para aprobación de límites según historial |
+| Santiago Morganti | Servicio de Solicitudes (I) | Lógica de `crearSolicitud()`, `obtenerPendientes()` y mapeo a Responses |
+| Santiago Lordi | Servicio de Solicitudes (II) | Algoritmos de operadores: `aprobarSolicitud()`, `rechazarSolicitud()` y búsqueda por ID |
+| Gianfranco Lippi | Endpoints y REST API | Controller `SolicitudAumentoController` y exposición de rutas |
+| Juan Ignacio Arce | API y Documentación | Patrón de DTOs (`SolicitudAumentoRequest` / `Response`) y documentación |
 
 ---
 
