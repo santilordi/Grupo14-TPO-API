@@ -100,10 +100,17 @@ public class SolicitudAumentoServiceImpl implements SolicitudAumentoService {
 
     @Override
     public List<SolicitudAumentoResponse> obtenerPendientes() {
-        // Usamos el método findByEstado 
         return solicitudAumentoRepository.findByEstado(EstadoSolicitudCredito.PENDIENTE)
                 .stream()
-                .map(this::mapearAResponse) // Convertimos cada una a Response 
+                .map(this::mapearAResponse)
+                .toList();
+    }
+
+    @Override
+    public List<SolicitudAumentoResponse> obtenerTodas() {
+        return solicitudAumentoRepository.findAll()
+                .stream()
+                .map(this::mapearAResponse)
                 .toList();
     }
 
