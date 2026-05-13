@@ -13,6 +13,7 @@ import com.uade.tpejemplo.dto.response.SolicitudAumentoResponse;
 import com.uade.tpejemplo.model.EstadoSolicitudCredito;
 import java.util.List;
 
+import java.time.LocalDate;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -89,6 +90,7 @@ public class SolicitudAumentoServiceImpl implements SolicitudAumentoService {
         SolicitudAumento nuevaSolicitud = new SolicitudAumento();
         nuevaSolicitud.setCliente(cliente);
         nuevaSolicitud.setMontoSolicitado(request.getMontoSolicitado());
+        nuevaSolicitud.setFechaSolicitud(LocalDate.now());
         nuevaSolicitud.setEstado(EstadoSolicitudCredito.PENDIENTE);
 
         // 4. Guardamos y devolvemos la respuesta mapeada
@@ -98,10 +100,17 @@ public class SolicitudAumentoServiceImpl implements SolicitudAumentoService {
 
     @Override
     public List<SolicitudAumentoResponse> obtenerPendientes() {
-        // Usamos el método findByEstado 
         return solicitudAumentoRepository.findByEstado(EstadoSolicitudCredito.PENDIENTE)
                 .stream()
-                .map(this::mapearAResponse) // Convertimos cada una a Response 
+                .map(this::mapearAResponse)
+                .toList();
+    }
+
+    @Override
+    public List<SolicitudAumentoResponse> obtenerTodas() {
+        return solicitudAumentoRepository.findAll()
+                .stream()
+                .map(this::mapearAResponse)
                 .toList();
     }
 

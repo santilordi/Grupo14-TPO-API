@@ -25,6 +25,12 @@ public class SolicitudAumentoController {
     }
 
     // GET /api/solicitudes/pendientes → listar solicitudes pendientes
+    // GET /api/solicitudes → listar todas las solicitudes
+    @GetMapping
+    public ResponseEntity<List<SolicitudAumentoResponse>> listarTodas() {
+        return ResponseEntity.ok(solicitudAumentoService.obtenerTodas());
+    }
+
     @GetMapping("/pendientes")
     public ResponseEntity<List<SolicitudAumentoResponse>> obtenerPendientes() {
         return ResponseEntity.ok(solicitudAumentoService.obtenerPendientes());

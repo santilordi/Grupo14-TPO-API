@@ -20,6 +20,7 @@ public interface SolicitudAumentoService {
     SolicitudAumentoResponse crearSolicitud(SolicitudAumentoRequest request);
 
     List<SolicitudAumentoResponse> obtenerPendientes();
+    List<SolicitudAumentoResponse> obtenerTodas();
 
     
 
