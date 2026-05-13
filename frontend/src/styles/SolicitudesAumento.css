@@ -1,0 +1,120 @@
+.sa-page {
+  padding: 32px;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.sa-title {
+  color: #1e3a5f;
+  margin-bottom: 24px;
+}
+
+.sa-card {
+  background: white;
+  padding: 24px;
+  border-radius: 12px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+  margin-bottom: 24px;
+}
+
+.sa-card-title {
+  margin: 0 0 16px 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.sa-count {
+  font-size: 0.85rem;
+  color: #999;
+  font-weight: normal;
+}
+
+.sa-filtros {
+  display: flex;
+  gap: 12px;
+}
+
+.sa-btn {
+  padding: 8px 20px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.sa-btn-activo {
+  background-color: #1e3a5f;
+  color: white;
+}
+
+.sa-btn-inactivo {
+  background-color: #e0e0e0;
+  color: #555;
+}
+
+.sa-btn-inactivo:hover {
+  background-color: #d0d0d0;
+}
+
+.sa-error {
+  background: #ffebee;
+  color: #c62828;
+  padding: 10px;
+  border-radius: 6px;
+  margin-bottom: 12px;
+  font-size: 0.9rem;
+}
+
+.sa-empty {
+  color: #999;
+  text-align: center;
+  padding: 32px 0;
+}
+
+.sa-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.sa-table th {
+  text-align: left;
+  padding: 10px 8px;
+  border-bottom: 2px solid #e0e0e0;
+  color: #555;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+}
+
+.sa-table td {
+  padding: 12px 8px;
+  font-size: 0.95rem;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.sa-table tbody tr:hover {
+  background-color: #f8f9fa;
+}
+
+.sa-badge {
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: bold;
+  display: inline-block;
+}
+
+.sa-badge-pendiente {
+  background-color: #fff3e0;
+  color: #e65100;
+}
+
+.sa-badge-aprobado {
+  background-color: #e8f5e9;
+  color: #2e7d32;
+}
+
+.sa-badge-rechazado {
+  background-color: #ffebee;
+  color: #c62828;
+}
