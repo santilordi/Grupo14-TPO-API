@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { Fragment, useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchClientes, addCliente } from '../store/slices/clientesSlice';
 
@@ -7,12 +7,42 @@ export default function Clientes() {
   const { lista, loading, error } = useSelector((state) => state.clientes);
   const [form, setForm] = useState({ dni: '', nombre: '' });
 
+  const [clienteExpandido, setClienteExpandido] = useState(null);
+  const [success, setSuccess] = useState('');
+  const [formError, setFormError] = useState('');
+
   useEffect(() => { dispatch(fetchClientes()); }, [dispatch]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const result = await dispatch(addCliente(form));
-    if (result.meta.requestStatus === 'fulfilled') setForm({ dni: '', nombre: '' });
+
+    setSuccess('');
+    setFormError('');
+
+    const dni = form.dni.trim();
+    const nombre = form.nombre.trim();
+
+    if (!dni || !nombre) {
+      setFormError('DNI y nombre son obligatorios.');
+      return;
+    }
+
+    if (!/^\d+$/.test(dni)) {
+      setFormError('El DNI debe contener solo numeros.');
+      return;
+    }
+
+    if (nombre.length < 3) {
+      setFormError('El nombre debe tener al menos 3 caracteres.');
+      return;
+    }
+
+    const result = await dispatch(addCliente({ dni, nombre }));
+
+    if (result.meta.requestStatus === 'fulfilled') {
+      setForm({ dni: '', nombre: '' });
+      setSuccess('Cliente creado correctamente.');
+    }
   };
 
   return (
@@ -21,10 +51,12 @@ export default function Clientes() {
 
       <div style={styles.card}>
         <h3>Nuevo cliente</h3>
+        {success && <div style={styles.success}>{success}</div>}
+        {formError && <div style={styles.error}>{formError}</div>}
         {error && <div style={styles.error}>{error}</div>}
         <form onSubmit={handleSubmit} style={styles.form}>
-          <input style={styles.input} placeholder="DNI" value={form.dni} onChange={e => setForm({...form, dni: e.target.value})} required />
-          <input style={styles.input} placeholder="Nombre completo" value={form.nombre} onChange={e => setForm({...form, nombre: e.target.value})} required />
+          <input style={styles.input} placeholder="DNI" value={form.dni} onChange={e => setForm({ ...form, dni: e.target.value })} required />
+          <input style={styles.input} placeholder="Nombre completo" value={form.nombre} onChange={e => setForm({ ...form, nombre: e.target.value })} required />
           <button style={styles.btn} disabled={loading}>{loading ? 'Guardando...' : 'Agregar'}</button>
         </form>
       </div>
@@ -38,7 +70,27 @@ export default function Clientes() {
             <thead><tr><th>DNI</th><th>Nombre</th></tr></thead>
             <tbody>
               {lista.map(c => (
-                <tr key={c.dni}><td>{c.dni}</td><td>{c.nombre}</td></tr>
+                <Fragment key={c.dni}>
+                  <tr
+                    onClick={() => setClienteExpandido(clienteExpandido === c.dni ? null : c.dni)}
+                    style={styles.clickableRow}
+                  >
+                    <td>{c.dni}</td>
+                    <td>{c.nombre}</td>
+                  </tr>
+
+                  {clienteExpandido === c.dni && (
+                    <tr>
+                      <td colSpan="2" style={styles.detailCell}>
+                        <strong>Limite de credito:</strong>{' '}
+                        ${Number(c.limiteCredito ?? 0).toLocaleString('es-AR', {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2,
+                        })}
+                      </td>
+                    </tr>
+                  )}
+                </Fragment>
               ))}
             </tbody>
           </table>
@@ -49,13 +101,28 @@ export default function Clientes() {
 }
 
 const styles = {
-  page:  { padding:'32px', maxWidth:'800px', margin:'0 auto' },
-  title: { color:'#1e3a5f', marginBottom:'24px' },
-  card:  { background:'white', padding:'24px', borderRadius:'12px', boxShadow:'0 2px 10px rgba(0,0,0,0.08)', marginBottom:'24px' },
-  form:  { display:'flex', gap:'12px', flexWrap:'wrap', alignItems:'center' },
-  input: { padding:'10px', border:'1px solid #ccc', borderRadius:'6px', flex:'1', minWidth:'140px' },
-  btn:   { padding:'10px 20px', backgroundColor:'#1e3a5f', color:'white', border:'none', borderRadius:'6px', cursor:'pointer', fontWeight:'bold' },
-  error: { background:'#ffebee', color:'#c62828', padding:'10px', borderRadius:'6px', marginBottom:'12px', fontSize:'0.9rem' },
-  empty: { color:'#999' },
-  table: { width:'100%', borderCollapse:'collapse' },
+  page: { padding: '32px', maxWidth: '800px', margin: '0 auto' },
+  title: { color: '#1e3a5f', marginBottom: '24px' },
+  card: { background: 'white', padding: '24px', borderRadius: '12px', boxShadow: '0 2px 10px rgba(0,0,0,0.08)', marginBottom: '24px' },
+  form: { display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'center' },
+  input: { padding: '10px', border: '1px solid #ccc', borderRadius: '6px', flex: '1', minWidth: '140px' },
+  btn: { padding: '10px 20px', backgroundColor: '#1e3a5f', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' },
+  error: { background: '#ffebee', color: '#c62828', padding: '10px', borderRadius: '6px', marginBottom: '12px', fontSize: '0.9rem' },
+  empty: { color: '#999' },
+  table: { width: '100%', borderCollapse: 'collapse' },
+  clickableRow: { cursor: 'pointer' },
+  detailCell: {
+    background: '#f5f9ff',
+    color: '#1e3a5f',
+    padding: '12px',
+    borderTop: '1px solid #e0e0e0',
+  },
+  success: {
+    background: '#e8f5e9',
+    color: '#2e7d32',
+    padding: '10px',
+    borderRadius: '6px',
+    marginBottom: '12px',
+    fontSize: '0.9rem'
+  },
 };
