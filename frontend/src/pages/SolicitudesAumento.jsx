@@ -34,19 +34,19 @@ export default function SolicitudesAumento() {
   };
 
   return (
-    <div className="sa-page">
-      <h2 className="sa-title">Solicitudes de Aumento</h2>
+    <div className="container">
+      <h2 style={{ color: '#1e3a5f', marginBottom: '24px' }}>Solicitudes de Aumento</h2>
 
-      <div className="sa-card">
-        <div className="sa-filtros">
+      <div className="card">
+        <div style={{ display: 'flex', gap: '1rem' }}>
           <button
-            className={`sa-btn ${filtro === 'todas' ? 'sa-btn-activo' : 'sa-btn-inactivo'}`}
+            className={`btn ${filtro === 'todas' ? 'btn-primary' : 'btn-secondary'}`}
             onClick={() => cambiarFiltro('todas')}
           >
             Todas
           </button>
           <button
-            className={`sa-btn ${filtro === 'pendientes' ? 'sa-btn-activo' : 'sa-btn-inactivo'}`}
+            className={`btn ${filtro === 'pendientes' ? 'btn-primary' : 'btn-secondary'}`}
             onClick={() => cambiarFiltro('pendientes')}
           >
             Solo pendientes
@@ -54,43 +54,50 @@ export default function SolicitudesAumento() {
         </div>
       </div>
 
-      <div className="sa-card">
-        <h3 className="sa-card-title">
-          {filtro === 'pendientes' ? 'Solicitudes pendientes' : 'Todas las solicitudes'}
-          <span className="sa-count">{lista.length}</span>
-        </h3>
+      <div className="card">
+        <div className="card-header">
+          <h3>
+            {filtro === 'pendientes' ? 'Solicitudes pendientes' : 'Todas las solicitudes'}
+            <span style={{ backgroundColor: '#e0e0e0', color: '#333', borderRadius: '12px', padding: '0.2rem 0.6rem', fontSize: '0.8rem', marginLeft: '1rem' }}>
+              {lista.length}
+            </span>
+          </h3>
+        </div>
 
-        {error && <div className="sa-error">{error}</div>}
+        {error && <div className="error-message">{error}</div>}
 
-        {loading && <p className="sa-empty">Cargando...</p>}
-
-        {!loading && !error && lista.length === 0 && (
-          <p className="sa-empty">No hay solicitudes registradas.</p>
-        )}
-
-        {!loading && lista.length > 0 && (
-          <table className="sa-table">
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>DNI Cliente</th>
-                <th>Monto solicitado</th>
-                <th>Fecha</th>
-                <th>Estado</th>
-              </tr>
-            </thead>
-            <tbody>
-              {lista.map(s => (
-                <tr key={s.id}>
-                  <td>#{s.id}</td>
-                  <td>{s.dniCliente}</td>
-                  <td>${Number(s.montoSolicitado).toLocaleString('es-AR', { minimumFractionDigits: 2 })}</td>
-                  <td>{s.fechaSolicitud}</td>
-                  <td><span className={badgeClass(s.estado)}>{s.estado}</span></td>
+        {loading ? (
+          <div className="loading-container">
+            <div className="spinner"></div>
+            <p>Cargando solicitudes...</p>
+          </div>
+        ) : !error && lista.length === 0 ? (
+          <p style={{ color: '#999', textAlign: 'center', padding: '2rem 0' }}>No hay solicitudes para mostrar.</p>
+        ) : (
+          <div className="table-wrapper">
+            <table className="table">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>DNI Cliente</th>
+                  <th>Monto solicitado</th>
+                  <th>Fecha</th>
+                  <th>Estado</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {lista.map(s => (
+                  <tr key={s.id}>
+                    <td>#{s.id}</td>
+                    <td>{s.dniCliente}</td>
+                    <td>${Number(s.montoSolicitado).toLocaleString('es-AR', { minimumFractionDigits: 2 })}</td>
+                    <td>{s.fechaSolicitud}</td>
+                    <td><span className={badgeClass(s.estado)}>{s.estado}</span></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
     </div>
