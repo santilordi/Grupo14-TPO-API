@@ -1,6 +1,6 @@
 .sa-page {
   padding: 32px;
-  max-width: 900px;
+  max-width: 1040px;
   margin: 0 auto;
 }
 
@@ -12,7 +12,7 @@
 .sa-card {
   background: white;
   padding: 24px;
-  border-radius: 12px;
+  border-radius: 8px;
   box-shadow: 0 2px 10px rgba(0,0,0,0.08);
   margin-bottom: 24px;
 }
@@ -30,9 +30,44 @@
   font-weight: normal;
 }
 
+.sa-form {
+  display: grid;
+  grid-template-columns: minmax(160px, 1fr) minmax(160px, 1fr) auto;
+  gap: 12px;
+  align-items: end;
+}
+
+.sa-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  color: #555;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.sa-field input {
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  color: #333;
+  font: inherit;
+  padding: 10px;
+  width: 100%;
+}
+
+.sa-field input:focus {
+  border-color: #1565c0;
+  outline: none;
+}
+
+.sa-toolbar-card {
+  padding: 16px 24px;
+}
+
 .sa-filtros {
   display: flex;
   gap: 12px;
+  flex-wrap: wrap;
 }
 
 .sa-btn {
@@ -41,6 +76,12 @@
   border-radius: 6px;
   cursor: pointer;
   font-weight: bold;
+}
+
+.sa-btn:disabled,
+.sa-action:disabled {
+  cursor: not-allowed;
+  opacity: 0.65;
 }
 
 .sa-btn-activo {
@@ -57,13 +98,22 @@
   background-color: #d0d0d0;
 }
 
-.sa-error {
-  background: #ffebee;
-  color: #c62828;
+.sa-alert {
   padding: 10px;
   border-radius: 6px;
   margin-bottom: 12px;
   font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.sa-alert-error {
+  background: #ffebee;
+  color: #c62828;
+}
+
+.sa-alert-exito {
+  background: #e8f5e9;
+  color: #2e7d32;
 }
 
 .sa-empty {
@@ -72,9 +122,14 @@
   padding: 32px 0;
 }
 
+.sa-table-wrap {
+  overflow-x: auto;
+}
+
 .sa-table {
   width: 100%;
   border-collapse: collapse;
+  min-width: 760px;
 }
 
 .sa-table th {
@@ -117,4 +172,41 @@
 .sa-badge-rechazado {
   background-color: #ffebee;
   color: #c62828;
+}
+
+.sa-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.sa-action {
+  border: none;
+  border-radius: 6px;
+  color: white;
+  cursor: pointer;
+  font-weight: bold;
+  padding: 7px 12px;
+}
+
+.sa-action-approve {
+  background-color: #2e7d32;
+}
+
+.sa-action-reject {
+  background-color: #c62828;
+}
+
+.sa-muted {
+  color: #888;
+  font-size: 0.9rem;
+}
+
+@media (max-width: 760px) {
+  .sa-page {
+    padding: 20px;
+  }
+
+  .sa-form {
+    grid-template-columns: 1fr;
+  }
 }
