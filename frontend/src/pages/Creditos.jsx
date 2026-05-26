@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchCreditosPorCliente, addCredito, clearCreditos } from '../store/slices/creditosSlice';
+import ConfirmDialog from '../components/ConfirmDialog';
 
 // Función auxiliar para formatear fechas de YYYY-MM-DD a DD/MM/YYYY sin desajustes de zona horaria
 const formatearFecha = (fechaStr) => {
@@ -13,6 +14,10 @@ export default function Creditos() {
   const { lista, loading, error } = useSelector((state) => state.creditos);
   const [dni, setDni] = useState('');
   const [buscado, setBuscado] = useState(false);
+  const [form, setForm] = useState({ dniCliente: '', deudaOriginal: '', fecha: '', importeCuota: '', cantidadCuotas: '' });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [pendingCredit, setPendingCredit] = useState(null);
 
   // --- Estados combinados ---
   const [form, setForm] = useState({ dniCliente: '', deudaOriginal: '', fecha: '', importeCuota: '', cantidadCuotas: '' });
@@ -37,7 +42,7 @@ export default function Creditos() {
     }));
   };
 
-  const handleSubmit = async (e) => {
+  const handlePreSubmit = (e) => {
     e.preventDefault();
         // REQUERIMIENTO: Validaciones en el frontend antes de enviar
     if (Number(form.deudaOriginal) <= 0) {
@@ -67,6 +72,141 @@ export default function Creditos() {
       cantidadCuotas: Number(form.cantidadCuotas),
     };
 
+
+    if (!payload.dniCliente.trim() || isNaN(payload.deudaOriginal) || payload.deudaOriginal <= 0 || !payload.fecha || isNaN(payload.importeCuota) || payload.importeCuota <= 0 || isNaN(payload.cantidadCuotas) || payload.cantidadCuotas <= 0) {
+      setValidationError('Todos los campos son obligatorios.');
+      return;
+    }
+
+    setPendingCredit(payload);
+    setShowConfirm(true);
+  };
+
+  const handleConfirm = async () => {
+    setShowConfirm(false);
+    if (!pendingCredit) return;
+    
+    setIsSubmitting(true);
+    const result = await dispatch(addCredito(pendingCredit));
+    
+    if (result.meta.requestStatus === 'fulfilled') {
+      setForm({ dniCliente: '', deudaOriginal: '', fecha: '', importeCuota: '', cantidadCuotas: '' });
+      if (pendingCredit.dniCliente === dni) dispatch(fetchCreditosPorCliente(dni));
+    }
+    
+    setIsSubmitting(true);
+    setPendingCredit(null);
+  };
+
+  const handleCancel = () => {
+    setShowConfirm(false);
+    setPendingCredit(null);
+  };
+
+  const formatCurrency = (amount) => {
+    return `$${Number(amount).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  };
+
+  return (
+    <div style={styles.page}>
+      <style>{`
+        .form-input {
+          transition: all 0.2s ease;
+        }
+        .form-input:focus {
+          outline: none;
+          border-color: #1e3a5f !important;
+          box-shadow: 0 0 0 3px rgba(30, 58, 95, 0.15);
+        }
+        .action-btn {
+          transition: all 0.2s ease;
+        }
+        .action-btn:hover:not(:disabled) {
+          background-color: #152b46 !important;
+          transform: translateY(-1px);
+        }
+        .action-btn:active:not(:disabled) {
+          transform: translateY(0);
+        }
+        .credito-card {
+          transition: box-shadow 0.25s ease;
+        }
+        .credito-card:hover {
+          box-shadow: 0 6px 16px rgba(0, 0, 0, 0.05);
+        }
+      `}</style>
+
+      <h2 style={styles.title}>Créditos</h2>
+
+      <div style={styles.card}>
+        <h3 style={styles.cardTitle}>Buscar créditos por cliente</h3>
+        <form onSubmit={buscar} style={styles.row}>
+          <input
+            className="form-input"
+            style={styles.input}
+            placeholder="DNI del cliente"
+            value={dni}
+            onChange={e => setDni(e.target.value)}
+            required
+          />
+          <button className="action-btn" style={styles.btn}>Buscar</button>
+        </form>
+      </div>
+
+      <div style={styles.card}>
+        <h3 style={styles.cardTitle}>Nuevo crédito</h3>
+        {error && <div style={styles.error}>{error}</div>}
+        <form onSubmit={handlePreSubmit} style={styles.grid}>
+          <input
+            className="form-input"
+            style={styles.input}
+            placeholder="DNI cliente"
+            value={form.dniCliente}
+            onChange={e => setForm({ ...form, dniCliente: e.target.value })}
+            required
+          />
+          <input
+            className="form-input"
+            style={styles.input}
+            placeholder="Deuda original"
+            value={form.deudaOriginal}
+            onChange={e => setForm({ ...form, deudaOriginal: e.target.value })}
+            type="number"
+            step="0.01"
+            required
+          />
+          <input
+            className="form-input"
+            style={styles.input}
+            placeholder="Fecha"
+            value={form.fecha}
+            onChange={e => setForm({ ...form, fecha: e.target.value })}
+            type="date"
+            required
+          />
+          <input
+            className="form-input"
+            style={styles.input}
+            placeholder="Importe cuota"
+            value={form.importeCuota}
+            onChange={e => setForm({ ...form, importeCuota: e.target.value })}
+            type="number"
+            step="0.01"
+            required
+          />
+          <input
+            className="form-input"
+            style={{ ...styles.input, gridColumn: 'span 2' }}
+            placeholder="Cant. cuotas"
+            value={form.cantidadCuotas}
+            onChange={e => setForm({ ...form, cantidadCuotas: e.target.value })}
+            type="number"
+            min="1"
+            required
+          />
+          <button className="action-btn" style={{ ...styles.btn, gridColumn: 'span 2', marginTop: '8px' }} disabled={loading}>
+            {loading ? 'Guardando...' : 'Crear crédito'}
+
     const result = await dispatch(addCredito(payload));
     if (result.meta.requestStatus === 'fulfilled') {
       setForm({ dniCliente: '', deudaOriginal: '', fecha: '', importeCuota: '', cantidadCuotas: '' });
@@ -90,7 +230,7 @@ export default function Creditos() {
             <label htmlFor="dni-buscar">DNI del cliente</label>
             <input id="dni-buscar" placeholder="DNI del cliente" value={dni} onChange={e => setDni(e.target.value)} required />
           </div>
-          <button type="submit" className="btn btn-primary">Buscar</button>
+          <button type="submit" className="btn btn-primary" disabled={loading && !isSubmitting}>Buscar</button>
         </form>
       </div>
 
@@ -98,8 +238,8 @@ export default function Creditos() {
         <div className="card-header">
           <h3>Nuevo crédito</h3>
         </div>
-        {error && <div className="error-message">{error}</div>}
-        <form onSubmit={handleSubmit} className="form-grid">
+        {(error || validacionError) && <div className="error-message">{error || validacionError}</div>}
+        <form onSubmit={handlePreSubmit} className="form-grid">
           <div className="form-group">
             <label htmlFor="dniCliente">DNI cliente</label>
             <input id="dniCliente" placeholder="DNI cliente" value={form.dniCliente} onChange={e => setForm({ ...form, dniCliente: e.target.value })} required disabled={isSubmitting} />
@@ -141,7 +281,6 @@ export default function Creditos() {
             <p style={{ color: '#999', textAlign: 'center', padding: '2rem 0' }}>El cliente no tiene créditos registrados.</p>
           ) : (
             lista.map(cr => {
-              // REQUERIMIENTO: Cálculo para el progreso de pagos
               const totalCuotas = cr.cuotas ? cr.cuotas.length : cr.cantidadCuotas;
               const cuotasPagadas = cr.cuotas ? cr.cuotas.filter(c => c.pagada).length : 0;
               const porcentajeProgreso = totalCuotas > 0 ? (cuotasPagadas / totalCuotas) * 100 : 0;
@@ -153,10 +292,9 @@ export default function Creditos() {
                     
                     <div style={{ flex: 1, minWidth: '250px' }}>
                       <p style={{ marginBottom: '8px' }}>
-                        <strong>ID #{cr.id}</strong> — Deuda: ${cr.deudaOriginal} — {cr.cantidadCuotas} cuotas de ${cr.importeCuota}
+                        <strong>ID #{cr.id}</strong> — Deuda: {formatCurrency(cr.deudaOriginal)} — {cr.cantidadCuotas} cuotas de {formatCurrency(cr.importeCuota)}
                       </p>
                       
-                      {/* REQUERIMIENTO: Barra de Progreso UX */}
                       <p style={{ fontSize: '0.85rem', color: '#666', marginBottom: '4px' }}>
                         Progreso: {cuotasPagadas}/{totalCuotas} cuotas pagadas
                       </p>
@@ -165,7 +303,6 @@ export default function Creditos() {
                       </div>
                     </div>
 
-                    {/* REQUERIMIENTO: Botón para expandir/colapsar detalle */}
                     <button 
                       type="button" 
                       onClick={() => toggleExpandir(cr.id)} 
@@ -176,7 +313,6 @@ export default function Creditos() {
                     
                   </div>
 
-                  {/* Si está expandido, se muestra la tabla */}
                   {estaExpandido && cr.cuotas && (
                     <div className="table-wrapper" style={{ marginTop: '16px' }}>
                       <table className="table">
@@ -200,13 +336,24 @@ export default function Creditos() {
                         </tbody>
                       </table>
                     </div>
-                  )} {/* <-- ACA FALTABA CERRAR EL CONDICIONAL DE LA TABLA */}
+                  )}
                 </div>
               );
-            }) /* <-- ACA DEBE SER }) PARA CERRAR EL MAP */
+            })
           )}
         </div>
       )}
+
+      <ConfirmDialog
+        isOpen={showConfirm}
+        title="Confirmar Creación de Crédito"
+        message={pendingCredit ? `¿Estás seguro de que deseas crear un crédito por ${formatCurrency(pendingCredit.deudaOriginal)} en ${pendingCredit.cantidadCuotas} cuotas de ${formatCurrency(pendingCredit.importeCuota)} para el cliente con DNI ${pendingCredit.dniCliente}? Se generarán automáticamente las cuotas correspondientes.` : ''}
+        confirmText="Crear Crédito"
+        cancelText="Cancelar"
+        type="primary"
+        onConfirm={handleConfirm}
+        onCancel={handleCancel}
+      />
     </div>
   );
 }

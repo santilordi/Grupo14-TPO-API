@@ -1,6 +1,7 @@
 import { Fragment, useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchClientes, addCliente } from '../store/slices/clientesSlice';
+import ConfirmDialog from '../components/ConfirmDialog';
 
 export default function Clientes() {
   const dispatch = useDispatch();
@@ -12,42 +13,63 @@ export default function Clientes() {
   const [success, setSuccess] = useState('');
   const [formError, setFormError] = useState('');
 
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [pendingClient, setPendingClient] = useState(null);
+
   useEffect(() => { dispatch(fetchClientes()); }, [dispatch]);
 
-  const handleSubmit = async (e) => {
+  const handlePreSubmit = (e) => {
     e.preventDefault();
     
+    // 1. Limpiamos mensajes anteriores
     setSuccess('');
     setFormError('');
-    setIsSubmitting(true);
-    
+
     const dni = form.dni.trim();
     const nombre = form.nombre.trim();
 
+    // 2. Hacemos las validaciones de main
     if (!dni || !nombre) {
       setFormError('DNI y nombre son obligatorios.');
-      setIsSubmitting(false);
       return;
     }
 
     if (!/^\d+$/.test(dni)) {
       setFormError('El DNI debe contener solo numeros.');
-      setIsSubmitting(false);
       return;
     }
 
     if (nombre.length < 3) {
       setFormError('El nombre debe tener al menos 3 caracteres.');
-      setIsSubmitting(false);
       return;
     }
 
-    const result = await dispatch(addCliente({ dni, nombre }));
+    // 3. Si todo es válido, guardamos los datos temporalmente y abrimos el modal de confirmación
+    setPendingClient({ dni, nombre });
+    setShowConfirm(true);
+  };
+
+  const handleConfirm = async () => {
+    setShowConfirm(false);
+    if (!pendingClient) return;
+    
+    setIsSubmitting(true);
+    
+    // 4. Enviamos al backend
+    const result = await dispatch(addCliente(pendingClient));
 
     if (result.meta.requestStatus === 'fulfilled') {
       setForm({ dni: '', nombre: '' });
       setSuccess('Cliente creado correctamente.');
     }
+    
+    setIsSubmitting(false);
+    setPendingClient(null);
+  };
+
+  const handleCancel = () => {
+    setShowConfirm(false);
+    setPendingClient(null);
   };
 
   return (
@@ -64,7 +86,7 @@ export default function Clientes() {
         {formError && <div className="error-message">{formError}</div>}
         {error && <div className="error-message">{error}</div>}
 
-        <form onSubmit={handleSubmit} className="form-grid" style={{ display: 'flex', alignItems: 'flex-end', gap: '1rem' }}>
+        <form onSubmit={handlePreSubmit} className="form-grid" style={{ display: 'flex', alignItems: 'flex-end', gap: '1rem' }}>
           <div className="form-group" style={{ flex: 1 }}>
               <label htmlFor="dni">DNI</label>
               <input id="dni" placeholder="DNI" value={form.dni} onChange={e => setForm({...form, dni: e.target.value})} required disabled={isSubmitting} />
@@ -131,6 +153,17 @@ export default function Clientes() {
           </div>
         )}
       </div>
+
+      <ConfirmDialog
+        isOpen={showConfirm}
+        title="Confirmar Registro de Cliente"
+        message={pendingClient ? `¿Estás seguro de que deseas registrar al cliente ${pendingClient.nombre} con DNI ${pendingClient.dni}?` : ''}
+        confirmText="Confirmar"
+        cancelText="Cancelar"
+        type="primary"
+        onConfirm={handleConfirm}
+        onCancel={handleCancel}
+      />
     </div>
-  );;
+  );
 }
