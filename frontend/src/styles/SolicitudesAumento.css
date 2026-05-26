@@ -1,0 +1,57 @@
+/* Estilos específicos para los badges de estado de las solicitudes */
+.sa-badge {
+  padding: 0.3rem 0.7rem;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 0.8rem;
+  color: white;
+  text-transform: uppercase;
+}
+
+.sa-badge-pendiente {
+  background-color: #ffc107; /* Amarillo */
+  color: #333;
+}
+
+.sa-badge-aprobado {
+  background-color: #28a745; /* Verde */
+}
+
+.sa-badge-rechazado {
+  background-color: #dc3545; /* Rojo */
+}
+
+/* Acciones y botones de la tabla */
+.sa-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.sa-action {
+  border: none;
+  border-radius: 6px;
+  color: white;
+  cursor: pointer;
+  font-weight: bold;
+  padding: 7px 12px;
+}
+
+.sa-action:disabled {
+  cursor: not-allowed;
+  opacity: 0.65;
+  background-color: #ccc;
+}
+
+.sa-action-approve {
+  background-color: #2e7d32;
+}
+
+.sa-action-reject {
+  background-color: #c62828;
+}
+
+.sa-muted {
+  color: #888;
+  font-size: 0.9rem;
+  font-style: italic;
+}

@@ -1,5 +1,7 @@
 package com.uade.tpejemplo.exception;
 
+import jakarta.persistence.EntityNotFoundException;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -19,6 +21,13 @@ public class GlobalExceptionHandler {
         );
     }
 
+    @ExceptionHandler(EntityNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleJpaNotFound(EntityNotFoundException ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(
+            new ErrorResponse(404, "Entidad no encontrada", List.of(ex.getMessage()), LocalDateTime.now())
+        );
+    }
+
     @ExceptionHandler(BusinessException.class)
     public ResponseEntity<ErrorResponse> handleBusiness(BusinessException ex) {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
@@ -26,7 +35,6 @@ public class GlobalExceptionHandler {
         );
     }
 
-    // Captura errores de @Valid en los request
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ErrorResponse> handleValidation(MethodArgumentNotValidException ex) {
         List<String> errores = ex.getBindingResult().getFieldErrors().stream()
@@ -34,6 +42,13 @@ public class GlobalExceptionHandler {
             .toList();
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
             new ErrorResponse(400, "Error de validación", errores, LocalDateTime.now())
+        );
+    }
+
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<ErrorResponse> handleDataIntegrity(DataIntegrityViolationException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(
+            new ErrorResponse(409, "Conflicto de integridad", List.of(ex.getMostSpecificCause().getMessage()), LocalDateTime.now())
         );
     }
 

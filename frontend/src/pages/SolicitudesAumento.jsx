@@ -116,24 +116,30 @@ export default function SolicitudesAumento() {
   };
 
   return (
-    <div className="sa-page">
-      <h2 className="sa-title">Solicitudes de Aumento</h2>
+    <div className="container">
+      <h2 style={{ color: '#1e3a5f', marginBottom: '24px' }}>Solicitudes de Aumento</h2>
 
-      <div className="sa-card">
-        <h3 className="sa-card-title">Nueva solicitud</h3>
-        <form className="sa-form" onSubmit={handleSubmit}>
-          <label className="sa-field">
-            <span>DNI cliente</span>
+
+      <div className="card">
+        <div className="card-header">
+          <h3>Nueva solicitud</h3>
+        </div>
+        <form onSubmit={handleSubmit} style={{ display: 'flex', gap: '1rem', alignItems: 'flex-end', padding: '0 0 1rem 0' }}>
+          <div className="form-group" style={{ flex: 1 }}>
+            <label htmlFor="dniCliente">DNI cliente</label>
             <input
+              id="dniCliente"
               value={form.dniCliente}
               onChange={e => setForm({ ...form, dniCliente: e.target.value })}
               placeholder="DNI"
               required
+              disabled={guardando}
             />
-          </label>
-          <label className="sa-field">
-            <span>Monto solicitado</span>
+          </div>
+          <div className="form-group" style={{ flex: 1 }}>
+            <label htmlFor="montoSolicitado">Monto solicitado</label>
             <input
+              id="montoSolicitado"
               value={form.montoSolicitado}
               onChange={e => setForm({ ...form, montoSolicitado: e.target.value })}
               placeholder="Monto"
@@ -141,25 +147,28 @@ export default function SolicitudesAumento() {
               min="1"
               step="0.01"
               required
+              disabled={guardando}
             />
-          </label>
-          <button className="sa-btn sa-btn-activo" disabled={guardando}>
+          </div>
+          <button type="submit" className="btn btn-primary" disabled={guardando} style={{ height: '42px' }}>
             {guardando ? 'Guardando...' : 'Crear solicitud'}
           </button>
         </form>
       </div>
 
-      <div className="sa-card sa-toolbar-card">
-        <div className="sa-filtros">
+      {/* Tarjeta para los filtros y la tabla */}
+      <div className="card">
+        <div className="card-header" style={{ display: 'flex', gap: '1rem', alignItems: 'center', flexWrap: 'wrap' }}>
+
           <button
-            className={`sa-btn ${filtro === 'todas' ? 'sa-btn-activo' : 'sa-btn-inactivo'}`}
+            className={`btn ${filtro === 'todas' ? 'btn-primary' : 'btn-secondary'}`}
             onClick={() => cambiarFiltro('todas')}
             disabled={loading}
           >
             Todas
           </button>
           <button
-            className={`sa-btn ${filtro === 'pendientes' ? 'sa-btn-activo' : 'sa-btn-inactivo'}`}
+            className={`btn ${filtro === 'pendientes' ? 'btn-primary' : 'btn-secondary'}`}
             onClick={() => cambiarFiltro('pendientes')}
             disabled={loading}
           >
@@ -168,23 +177,40 @@ export default function SolicitudesAumento() {
         </div>
       </div>
 
-      <div className="sa-card">
-        <h3 className="sa-card-title">
-          {filtro === 'pendientes' ? 'Solicitudes pendientes' : 'Todas las solicitudes'}
-          <span className="sa-count">{lista.length}</span>
-        </h3>
+      <div className="card">
+        <div className="card-header">
+          <h3>
+            {filtro === 'pendientes' ? 'Solicitudes pendientes' : 'Todas las solicitudes'}
+            <span style={{ backgroundColor: '#e0e0e0', color: '#333', borderRadius: '12px', padding: '0.2rem 0.6rem', fontSize: '0.8rem', marginLeft: '1rem' }}>
+              {lista.length}
+            </span>
+          </h3>
+        </div>
 
-        {mensaje && <div className={`sa-alert sa-alert-${mensaje.tipo}`}>{mensaje.texto}</div>}
-
-        {loading && <p className="sa-empty">Cargando...</p>}
-
-        {!loading && lista.length === 0 && (
-          <p className="sa-empty">No hay solicitudes registradas.</p>
+        {error && <div className="error-message">{error}</div>}
+        
+        {mensaje && (
+          <div style={{ 
+            padding: '10px', 
+            marginBottom: '1rem', 
+            borderRadius: '4px', 
+            backgroundColor: mensaje.tipo === 'error' ? '#ffebee' : '#d4edda', 
+            color: mensaje.tipo === 'error' ? '#c62828' : '#155724' 
+          }}>
+            {mensaje.texto}
+          </div>
         )}
 
-        {!loading && lista.length > 0 && (
-          <div className="sa-table-wrap">
-            <table className="sa-table">
+        {loading ? (
+          <div className="loading-container">
+            <div className="spinner"></div>
+            <p>Cargando solicitudes...</p>
+          </div>
+        ) : !error && lista.length === 0 ? (
+          <p style={{ color: '#999', textAlign: 'center', padding: '2rem 0' }}>No hay solicitudes para mostrar.</p>
+        ) : (
+          <div className="table-wrapper">
+            <table className="table">
               <thead>
                 <tr>
                   <th>ID</th>
