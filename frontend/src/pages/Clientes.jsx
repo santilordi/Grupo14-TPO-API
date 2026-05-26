@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { Fragment, useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchClientes, addCliente } from '../store/slices/clientesSlice';
 
@@ -8,16 +8,46 @@ export default function Clientes() {
   const [form, setForm] = useState({ dni: '', nombre: '' });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const [clienteExpandido, setClienteExpandido] = useState(null);
+  const [success, setSuccess] = useState('');
+  const [formError, setFormError] = useState('');
+
   useEffect(() => { dispatch(fetchClientes()); }, [dispatch]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    setSuccess('');
+    setFormError('');
     setIsSubmitting(true);
-    const result = await dispatch(addCliente(form));
-    if (result.meta.requestStatus === 'fulfilled') {
-        setForm({ dni: '', nombre: '' });
+    
+    const dni = form.dni.trim();
+    const nombre = form.nombre.trim();
+
+    if (!dni || !nombre) {
+      setFormError('DNI y nombre son obligatorios.');
+      setIsSubmitting(false);
+      return;
     }
-    setIsSubmitting(false);
+
+    if (!/^\d+$/.test(dni)) {
+      setFormError('El DNI debe contener solo numeros.');
+      setIsSubmitting(false);
+      return;
+    }
+
+    if (nombre.length < 3) {
+      setFormError('El nombre debe tener al menos 3 caracteres.');
+      setIsSubmitting(false);
+      return;
+    }
+
+    const result = await dispatch(addCliente({ dni, nombre }));
+
+    if (result.meta.requestStatus === 'fulfilled') {
+      setForm({ dni: '', nombre: '' });
+      setSuccess('Cliente creado correctamente.');
+    }
   };
 
   return (
@@ -28,7 +58,12 @@ export default function Clientes() {
         <div className="card-header">
             <h3>Nuevo cliente</h3>
         </div>
+        
+        {/* Mensajes de validación y éxito combinados */}
+        {success && <div style={{ color: '#155724', backgroundColor: '#d4edda', padding: '10px', borderRadius: '4px', marginBottom: '1rem' }}>{success}</div>}
+        {formError && <div className="error-message">{formError}</div>}
         {error && <div className="error-message">{error}</div>}
+
         <form onSubmit={handleSubmit} className="form-grid" style={{ display: 'flex', alignItems: 'flex-end', gap: '1rem' }}>
           <div className="form-group" style={{ flex: 1 }}>
               <label htmlFor="dni">DNI</label>
@@ -59,10 +94,37 @@ export default function Clientes() {
         ) : (
           <div className="table-wrapper">
               <table className="table">
-                <thead><tr><th>DNI</th><th>Nombre</th></tr></thead>
+                <thead>
+                  <tr>
+                    <th>DNI</th>
+                    <th>Nombre</th>
+                  </tr>
+                </thead>
                 <tbody>
                   {lista.map(c => (
-                    <tr key={c.dni}><td>{c.dni}</td><td>{c.nombre}</td></tr>
+                    <Fragment key={c.dni}>
+                      <tr 
+                        onClick={() => setClienteExpandido(clienteExpandido === c.dni ? null : c.dni)}
+                        style={{ cursor: 'pointer' }}
+                        title="Clic para ver detalle"
+                      >
+                        <td>{c.dni}</td>
+                        <td>{c.nombre}</td>
+                      </tr>
+                      
+                      {/* Fila desplegable con el Límite de Crédito */}
+                      {clienteExpandido === c.dni && (
+                        <tr>
+                          <td colSpan="2" style={{ backgroundColor: '#f8f9fa', padding: '1rem', borderLeft: '4px solid #1e3a5f' }}>
+                            <strong>Límite de crédito:</strong>{' '}
+                            ${Number(c.limiteCredito ?? 0).toLocaleString('es-AR', {
+                              minimumFractionDigits: 2,
+                              maximumFractionDigits: 2,
+                            })}
+                          </td>
+                        </tr>
+                      )}
+                    </Fragment>
                   ))}
                 </tbody>
               </table>
@@ -70,5 +132,5 @@ export default function Clientes() {
         )}
       </div>
     </div>
-  );
+  );;
 }

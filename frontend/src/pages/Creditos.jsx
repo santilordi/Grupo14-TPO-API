@@ -1,15 +1,25 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchCreditosPorCliente, addCredito, clearCreditos } from '../store/slices/creditosSlice';
+
+// Función auxiliar para formatear fechas de YYYY-MM-DD a DD/MM/YYYY sin desajustes de zona horaria
+const formatearFecha = (fechaStr) => {
+  if (!fechaStr) return '';
+  return fechaStr.includes('-') ? fechaStr.split('-').reverse().join('/') : fechaStr;
+};
 
 export default function Creditos() {
   const dispatch = useDispatch();
   const { lista, loading, error } = useSelector((state) => state.creditos);
   const [dni, setDni] = useState('');
   const [buscado, setBuscado] = useState(false);
-  const [form, setForm] = useState({ dniCliente: '', deudaOriginal: '', fecha: '', importeCuota: '', cantidadCuotas: '' });
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // --- Estados combinados ---
+  const [form, setForm] = useState({ dniCliente: '', deudaOriginal: '', fecha: '', importeCuota: '', cantidadCuotas: '' });
+  const [isSubmitting, setIsSubmitting] = useState(false); // Viene de manuel_front
+  
+  const [expandedIds, setExpandedIds] = useState({}); // Viene de main
+  const [validacionError, setValidationError] = useState(''); // Viene de main
   const buscar = async (e) => {
     e.preventDefault();
     dispatch(clearCreditos());
@@ -19,15 +29,44 @@ export default function Creditos() {
     }
   };
 
+  // Función para alternar el colapso/expansión de las cuotas
+  const toggleExpandir = (id) => {
+    setExpandedIds(prev => ({
+      ...prev,
+      [id]: !prev[id]
+    }));
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+        // REQUERIMIENTO: Validaciones en el frontend antes de enviar
+    if (Number(form.deudaOriginal) <= 0) {
+      setValidationError('La deuda original debe ser un monto mayor a cero.');
+      return;
+    }
+    if (Number(form.importeCuota) <= 0) {
+      setValidationError('El importe de la cuota debe ser mayor a cero.');
+      return;
+    }
+    if (Number(form.cantidadCuotas) <= 0) {
+      setValidationError('La cantidad de cuotas debe ser al menos 1.');
+      return;
+    }
+    if (form.dniCliente.trim().length < 7) {
+      setValidationError('El DNI debe tener un formato válido (mínimo 7 dígitos).');
+      return;
+    }
+
+    setValidationError('');
     setIsSubmitting(true);
+    
     const payload = {
       ...form,
       deudaOriginal: Number(form.deudaOriginal),
       importeCuota: Number(form.importeCuota),
       cantidadCuotas: Number(form.cantidadCuotas),
     };
+
     const result = await dispatch(addCredito(payload));
     if (result.meta.requestStatus === 'fulfilled') {
       setForm({ dniCliente: '', deudaOriginal: '', fecha: '', importeCuota: '', cantidadCuotas: '' });
@@ -92,6 +131,7 @@ export default function Creditos() {
           <div className="card-header">
             <h3>Créditos del cliente ({lista.length})</h3>
           </div>
+          
           {loading && !isSubmitting ? (
             <div className="loading-container">
               <div className="spinner"></div>
@@ -100,25 +140,70 @@ export default function Creditos() {
           ) : lista.length === 0 ? (
             <p style={{ color: '#999', textAlign: 'center', padding: '2rem 0' }}>El cliente no tiene créditos registrados.</p>
           ) : (
-            lista.map(cr => (
-              <div key={cr.id} style={{ borderLeft: '4px solid #1e3a5f', paddingLeft: '16px', marginBottom: '20px' }}>
-                <p><strong>ID #{cr.id}</strong> — Deuda: ${cr.deudaOriginal} — {cr.cantidadCuotas} cuotas de ${cr.importeCuota}</p>
-                <div className="table-wrapper">
-                  <table className="table">
-                    <thead><tr><th>#</th><th>Vencimiento</th><th>Estado</th></tr></thead>
-                    <tbody>
-                      {cr.cuotas.map(c => (
-                        <tr key={c.idCuota}>
-                          <td>{c.idCuota}</td>
-                          <td>{c.fechaVencimiento}</td>
-                          <td style={{ color: c.pagada ? '#2e7d32' : '#c62828' }}>{c.pagada ? '✔ Pagada' : '✘ Pendiente'}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+            lista.map(cr => {
+              // REQUERIMIENTO: Cálculo para el progreso de pagos
+              const totalCuotas = cr.cuotas ? cr.cuotas.length : cr.cantidadCuotas;
+              const cuotasPagadas = cr.cuotas ? cr.cuotas.filter(c => c.pagada).length : 0;
+              const porcentajeProgreso = totalCuotas > 0 ? (cuotasPagadas / totalCuotas) * 100 : 0;
+              const estaExpandido = !!expandedIds[cr.id];
+
+              return (
+                <div key={cr.id} style={{ borderLeft: '4px solid #1e3a5f', paddingLeft: '16px', marginBottom: '20px', paddingBottom: '16px', borderBottom: '1px solid #eee' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem' }}>
+                    
+                    <div style={{ flex: 1, minWidth: '250px' }}>
+                      <p style={{ marginBottom: '8px' }}>
+                        <strong>ID #{cr.id}</strong> — Deuda: ${cr.deudaOriginal} — {cr.cantidadCuotas} cuotas de ${cr.importeCuota}
+                      </p>
+                      
+                      {/* REQUERIMIENTO: Barra de Progreso UX */}
+                      <p style={{ fontSize: '0.85rem', color: '#666', marginBottom: '4px' }}>
+                        Progreso: {cuotasPagadas}/{totalCuotas} cuotas pagadas
+                      </p>
+                      <div style={{ width: '100%', maxWidth: '300px', backgroundColor: '#e0e0e0', borderRadius: '4px', height: '8px', overflow: 'hidden' }}>
+                        <div style={{ height: '100%', backgroundColor: '#28a745', width: `${porcentajeProgreso}%`, transition: 'width 0.3s ease' }} />
+                      </div>
+                    </div>
+
+                    {/* REQUERIMIENTO: Botón para expandir/colapsar detalle */}
+                    <button 
+                      type="button" 
+                      onClick={() => toggleExpandir(cr.id)} 
+                      style={{ backgroundColor: '#f0f4f8', color: '#1e3a5f', border: '1px solid #cce0ff', padding: '6px 12px', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}
+                    >
+                      {estaExpandido ? '▲ Ocultar Cuotas' : '▼ Ver Cuotas'}
+                    </button>
+                    
+                  </div>
+
+                  {/* Si está expandido, se muestra la tabla */}
+                  {estaExpandido && cr.cuotas && (
+                    <div className="table-wrapper" style={{ marginTop: '16px' }}>
+                      <table className="table">
+                        <thead>
+                          <tr>
+                            <th>#</th>
+                            <th>Vencimiento</th>
+                            <th>Estado</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {cr.cuotas.map(c => (
+                            <tr key={c.idCuota}>
+                              <td>{c.idCuota}</td>
+                              <td>{formatearFecha(c.fechaVencimiento)}</td>
+                              <td style={{ color: c.pagada ? '#2e7d32' : '#c62828', fontWeight: 'bold' }}>
+                                {c.pagada ? 'Pagada' : 'Pendiente'}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )} {/* <-- ACA FALTABA CERRAR EL CONDICIONAL DE LA TABLA */}
                 </div>
-              </div>
-            ))
+              );
+            }) /* <-- ACA DEBE SER }) PARA CERRAR EL MAP */
           )}
         </div>
       )}
