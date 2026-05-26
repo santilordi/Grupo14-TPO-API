@@ -7,6 +7,7 @@ import {
   rechazarSolicitud,
 } from '../api/solicitudes';
 import '../styles/SolicitudesAumento.css';
+import ConfirmDialog from '../components/ConfirmDialog';
 
 const estadoInicialForm = { dniCliente: '', montoSolicitado: '' };
 
@@ -18,6 +19,14 @@ export default function SolicitudesAumento() {
   const [accionId, setAccionId] = useState(null);
   const [mensaje, setMensaje] = useState(null);
   const [filtro, setFiltro] = useState('todas');
+
+  // Estados para ConfirmDialog – crear solicitud
+  const [showCreateConfirm, setShowCreateConfirm] = useState(false);
+  const [pendingCreate, setPendingCreate] = useState(null);
+
+  // Estados para ConfirmDialog – aprobar / rechazar
+  const [showActionConfirm, setShowActionConfirm] = useState(false);
+  const [pendingAction, setPendingAction] = useState(null); // { solicitud, accion }
 
   const cargar = useCallback(async (pendientes) => {
     setLoading(true);
@@ -39,18 +48,20 @@ export default function SolicitudesAumento() {
     cargar(nuevo === 'pendientes');
   };
 
-  const handleSubmit = async (event) => {
+  const handleSubmit = (event) => {
     event.preventDefault();
+    if (!form.dniCliente.trim() || !form.montoSolicitado) return;
+    setPendingCreate({ dniCliente: form.dniCliente.trim(), montoSolicitado: Number(form.montoSolicitado) });
+    setShowCreateConfirm(true);
+  };
 
-    if (!window.confirm('Confirmar creacion de la solicitud de aumento?')) return;
-
+  const handleConfirmCreate = async () => {
+    setShowCreateConfirm(false);
+    if (!pendingCreate) return;
     setGuardando(true);
     setMensaje(null);
     try {
-      await crearSolicitud({
-        dniCliente: form.dniCliente.trim(),
-        montoSolicitado: Number(form.montoSolicitado),
-      });
+      await crearSolicitud(pendingCreate);
       setForm(estadoInicialForm);
       setMensaje({ tipo: 'exito', texto: 'Solicitud creada correctamente.' });
       await cargar(filtro === 'pendientes');
@@ -58,13 +69,24 @@ export default function SolicitudesAumento() {
       setMensaje({ tipo: 'error', texto: err.message });
     } finally {
       setGuardando(false);
+      setPendingCreate(null);
     }
   };
 
-  const cambiarEstado = async (solicitud, accion) => {
-    const textoAccion = accion === 'aprobar' ? 'aprobar' : 'rechazar';
-    if (!window.confirm(`Confirmar ${textoAccion} la solicitud #${solicitud.id}?`)) return;
+  const handleCancelCreate = () => {
+    setShowCreateConfirm(false);
+    setPendingCreate(null);
+  };
 
+  const cambiarEstado = (solicitud, accion) => {
+    setPendingAction({ solicitud, accion });
+    setShowActionConfirm(true);
+  };
+
+  const handleConfirmAction = async () => {
+    setShowActionConfirm(false);
+    if (!pendingAction) return;
+    const { solicitud, accion } = pendingAction;
     setAccionId(solicitud.id);
     setMensaje(null);
     try {
@@ -79,7 +101,13 @@ export default function SolicitudesAumento() {
       setMensaje({ tipo: 'error', texto: err.message });
     } finally {
       setAccionId(null);
+      setPendingAction(null);
     }
+  };
+
+  const handleCancelAction = () => {
+    setShowActionConfirm(false);
+    setPendingAction(null);
   };
 
   const badgeClass = (estado) => {
@@ -204,6 +232,30 @@ export default function SolicitudesAumento() {
           </div>
         )}
       </div>
+
+      {/* Modal – Crear solicitud */}
+      <ConfirmDialog
+        isOpen={showCreateConfirm}
+        title="Confirmar solicitud de aumento"
+        message={pendingCreate ? `¿Estás seguro de que deseas crear una solicitud de aumento por $${Number(pendingCreate.montoSolicitado).toLocaleString('es-AR', { minimumFractionDigits: 2 })} para el cliente con DNI ${pendingCreate.dniCliente}?` : ''}
+        confirmText="Crear solicitud"
+        cancelText="Cancelar"
+        type="primary"
+        onConfirm={handleConfirmCreate}
+        onCancel={handleCancelCreate}
+      />
+
+      {/* Modal – Aprobar / Rechazar */}
+      <ConfirmDialog
+        isOpen={showActionConfirm}
+        title={pendingAction?.accion === 'aprobar' ? 'Aprobar solicitud' : 'Rechazar solicitud'}
+        message={pendingAction ? `¿Estás seguro de que deseas ${pendingAction.accion === 'aprobar' ? 'aprobar' : 'rechazar'} la solicitud #${pendingAction.solicitud.id} del cliente ${pendingAction.solicitud.dniCliente}? Esta acción no se puede deshacer.` : ''}
+        confirmText={pendingAction?.accion === 'aprobar' ? 'Aprobar' : 'Rechazar'}
+        cancelText="Cancelar"
+        type={pendingAction?.accion === 'rechazar' ? 'danger' : 'primary'}
+        onConfirm={handleConfirmAction}
+        onCancel={handleCancelAction}
+      />
     </div>
   );
 }
