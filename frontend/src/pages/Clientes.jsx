@@ -6,6 +6,7 @@ export default function Clientes() {
   const dispatch = useDispatch();
   const { lista, loading, error } = useSelector((state) => state.clientes);
   const [form, setForm] = useState({ dni: '', nombre: '' });
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [clienteExpandido, setClienteExpandido] = useState(null);
   const [success, setSuccess] = useState('');
@@ -15,25 +16,29 @@ export default function Clientes() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
+    
     setSuccess('');
     setFormError('');
-
+    setIsSubmitting(true);
+    
     const dni = form.dni.trim();
     const nombre = form.nombre.trim();
 
     if (!dni || !nombre) {
       setFormError('DNI y nombre son obligatorios.');
+      setIsSubmitting(false);
       return;
     }
 
     if (!/^\d+$/.test(dni)) {
       setFormError('El DNI debe contener solo numeros.');
+      setIsSubmitting(false);
       return;
     }
 
     if (nombre.length < 3) {
       setFormError('El nombre debe tener al menos 3 caracteres.');
+      setIsSubmitting(false);
       return;
     }
 
@@ -46,83 +51,86 @@ export default function Clientes() {
   };
 
   return (
-    <div style={styles.page}>
-      <h2 style={styles.title}>Clientes</h2>
+    <div className="container">
+      <h2 style={{ color: '#1e3a5f', marginBottom: '24px' }}>Clientes</h2>
 
-      <div style={styles.card}>
-        <h3>Nuevo cliente</h3>
-        {success && <div style={styles.success}>{success}</div>}
-        {formError && <div style={styles.error}>{formError}</div>}
-        {error && <div style={styles.error}>{error}</div>}
-        <form onSubmit={handleSubmit} style={styles.form}>
-          <input style={styles.input} placeholder="DNI" value={form.dni} onChange={e => setForm({ ...form, dni: e.target.value })} required />
-          <input style={styles.input} placeholder="Nombre completo" value={form.nombre} onChange={e => setForm({ ...form, nombre: e.target.value })} required />
-          <button style={styles.btn} disabled={loading}>{loading ? 'Guardando...' : 'Agregar'}</button>
+      <div className="card">
+        <div className="card-header">
+            <h3>Nuevo cliente</h3>
+        </div>
+        
+        {/* Mensajes de validación y éxito combinados */}
+        {success && <div style={{ color: '#155724', backgroundColor: '#d4edda', padding: '10px', borderRadius: '4px', marginBottom: '1rem' }}>{success}</div>}
+        {formError && <div className="error-message">{formError}</div>}
+        {error && <div className="error-message">{error}</div>}
+
+        <form onSubmit={handleSubmit} className="form-grid" style={{ display: 'flex', alignItems: 'flex-end', gap: '1rem' }}>
+          <div className="form-group" style={{ flex: 1 }}>
+              <label htmlFor="dni">DNI</label>
+              <input id="dni" placeholder="DNI" value={form.dni} onChange={e => setForm({...form, dni: e.target.value})} required disabled={isSubmitting} />
+          </div>
+          <div className="form-group" style={{ flex: 2 }}>
+              <label htmlFor="nombre">Nombre completo</label>
+              <input id="nombre" placeholder="Nombre completo" value={form.nombre} onChange={e => setForm({...form, nombre: e.target.value})} required disabled={isSubmitting} />
+          </div>
+          <button type="submit" className="btn btn-primary" disabled={isSubmitting} style={{ height: '42px' }}>
+              {isSubmitting ? 'Guardando...' : 'Agregar'}
+          </button>
         </form>
       </div>
 
-      <div style={styles.card}>
-        <h3>Lista de clientes ({lista.length})</h3>
-        {loading && <p style={styles.empty}>Cargando...</p>}
-        {!loading && lista.length === 0 && <p style={styles.empty}>No hay clientes registrados.</p>}
-        {lista.length > 0 && (
-          <table style={styles.table}>
-            <thead><tr><th>DNI</th><th>Nombre</th></tr></thead>
-            <tbody>
-              {lista.map(c => (
-                <Fragment key={c.dni}>
-                  <tr
-                    onClick={() => setClienteExpandido(clienteExpandido === c.dni ? null : c.dni)}
-                    style={styles.clickableRow}
-                  >
-                    <td>{c.dni}</td>
-                    <td>{c.nombre}</td>
+      <div className="card">
+        <div className="card-header">
+            <h3>Lista de clientes ({lista.length})</h3>
+        </div>
+        
+        {loading && !isSubmitting ? (
+          <div className="loading-container">
+            <div className="spinner"></div>
+            <p>Cargando clientes...</p>
+          </div>
+        ) : lista.length === 0 ? (
+          <p style={{ color: '#999', textAlign: 'center', padding: '2rem 0' }}>No hay clientes registrados.</p>
+        ) : (
+          <div className="table-wrapper">
+              <table className="table">
+                <thead>
+                  <tr>
+                    <th>DNI</th>
+                    <th>Nombre</th>
                   </tr>
-
-                  {clienteExpandido === c.dni && (
-                    <tr>
-                      <td colSpan="2" style={styles.detailCell}>
-                        <strong>Limite de credito:</strong>{' '}
-                        ${Number(c.limiteCredito ?? 0).toLocaleString('es-AR', {
-                          minimumFractionDigits: 2,
-                          maximumFractionDigits: 2,
-                        })}
-                      </td>
-                    </tr>
-                  )}
-                </Fragment>
-              ))}
-            </tbody>
-          </table>
+                </thead>
+                <tbody>
+                  {lista.map(c => (
+                    <Fragment key={c.dni}>
+                      <tr 
+                        onClick={() => setClienteExpandido(clienteExpandido === c.dni ? null : c.dni)}
+                        style={{ cursor: 'pointer' }}
+                        title="Clic para ver detalle"
+                      >
+                        <td>{c.dni}</td>
+                        <td>{c.nombre}</td>
+                      </tr>
+                      
+                      {/* Fila desplegable con el Límite de Crédito */}
+                      {clienteExpandido === c.dni && (
+                        <tr>
+                          <td colSpan="2" style={{ backgroundColor: '#f8f9fa', padding: '1rem', borderLeft: '4px solid #1e3a5f' }}>
+                            <strong>Límite de crédito:</strong>{' '}
+                            ${Number(c.limiteCredito ?? 0).toLocaleString('es-AR', {
+                              minimumFractionDigits: 2,
+                              maximumFractionDigits: 2,
+                            })}
+                          </td>
+                        </tr>
+                      )}
+                    </Fragment>
+                  ))}
+                </tbody>
+              </table>
+          </div>
         )}
       </div>
     </div>
-  );
+  );;
 }
-
-const styles = {
-  page: { padding: '32px', maxWidth: '800px', margin: '0 auto' },
-  title: { color: '#1e3a5f', marginBottom: '24px' },
-  card: { background: 'white', padding: '24px', borderRadius: '12px', boxShadow: '0 2px 10px rgba(0,0,0,0.08)', marginBottom: '24px' },
-  form: { display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'center' },
-  input: { padding: '10px', border: '1px solid #ccc', borderRadius: '6px', flex: '1', minWidth: '140px' },
-  btn: { padding: '10px 20px', backgroundColor: '#1e3a5f', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' },
-  error: { background: '#ffebee', color: '#c62828', padding: '10px', borderRadius: '6px', marginBottom: '12px', fontSize: '0.9rem' },
-  empty: { color: '#999' },
-  table: { width: '100%', borderCollapse: 'collapse' },
-  clickableRow: { cursor: 'pointer' },
-  detailCell: {
-    background: '#f5f9ff',
-    color: '#1e3a5f',
-    padding: '12px',
-    borderTop: '1px solid #e0e0e0',
-  },
-  success: {
-    background: '#e8f5e9',
-    color: '#2e7d32',
-    padding: '10px',
-    borderRadius: '6px',
-    marginBottom: '12px',
-    fontSize: '0.9rem'
-  },
-};

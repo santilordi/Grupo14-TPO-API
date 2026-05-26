@@ -6,78 +6,100 @@ export default function Cobranzas() {
   const dispatch = useDispatch();
   const { lista, loading, error } = useSelector((state) => state.cobranzas);
   const [idCredito, setIdCredito] = useState('');
-  const [buscado, setBuscado]     = useState(false);
-  const [form, setForm]           = useState({ idCredito:'', idCuota:'', importe:'' });
+  const [buscado, setBuscado] = useState(false);
+  const [form, setForm] = useState({ idCredito: '', idCuota: '', importe: '' });
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const buscar = async (e) => {
     e.preventDefault();
     dispatch(clearCobranzas());
     const result = await dispatch(fetchCobranzasPorCredito(idCredito));
-    if (result.meta.requestStatus === 'fulfilled') setBuscado(true);
+    if (result.meta.requestStatus === 'fulfilled') {
+      setBuscado(true);
+    }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setIsSubmitting(true);
     const payload = { idCredito: Number(form.idCredito), idCuota: Number(form.idCuota), importe: Number(form.importe) };
     const result = await dispatch(addCobranza(payload));
     if (result.meta.requestStatus === 'fulfilled') {
-      setForm({ idCredito:'', idCuota:'', importe:'' });
-      if (String(form.idCredito) === idCredito) dispatch(fetchCobranzasPorCredito(idCredito));
+      setForm({ idCredito: '', idCuota: '', importe: '' });
+      if (String(form.idCredito) === idCredito) {
+        dispatch(fetchCobranzasPorCredito(idCredito));
+      }
     }
+    setIsSubmitting(false);
   };
 
   return (
-    <div style={styles.page}>
-      <h2 style={styles.title}>Cobranzas</h2>
+    <div className="container">
+      <h2 style={{ color: '#1e3a5f', marginBottom: '24px' }}>Cobranzas</h2>
 
-      <div style={styles.card}>
-        <h3>Buscar cobranzas por crédito</h3>
-        <form onSubmit={buscar} style={styles.row}>
-          <input style={styles.input} placeholder="ID del crédito" type="number" value={idCredito} onChange={e => setIdCredito(e.target.value)} required />
-          <button style={styles.btn}>Buscar</button>
+      <div className="card">
+        <div className="card-header">
+          <h3>Buscar cobranzas por crédito</h3>
+        </div>
+        <form onSubmit={buscar} style={{ display: 'flex', gap: '1rem', alignItems: 'flex-end' }}>
+          <div className="form-group" style={{ flex: 1 }}>
+            <label htmlFor="id-credito-buscar">ID del crédito</label>
+            <input id="id-credito-buscar" placeholder="ID del crédito" type="number" value={idCredito} onChange={e => setIdCredito(e.target.value)} required />
+          </div>
+          <button type="submit" className="btn btn-primary">Buscar</button>
         </form>
       </div>
 
-      <div style={styles.card}>
-        <h3>Registrar pago de cuota</h3>
-        {error && <div style={styles.error}>{error}</div>}
-        <form onSubmit={handleSubmit} style={styles.row}>
-          <input style={styles.input} placeholder="ID crédito" type="number" value={form.idCredito} onChange={e => setForm({...form, idCredito: e.target.value})} required />
-          <input style={styles.input} placeholder="Nro. cuota"  type="number" min="1" value={form.idCuota}   onChange={e => setForm({...form, idCuota: e.target.value})}   required />
-          <input style={styles.input} placeholder="Importe"     type="number" value={form.importe}    onChange={e => setForm({...form, importe: e.target.value})}    required />
-          <button style={styles.btn} disabled={loading}>{loading ? 'Registrando...' : 'Registrar'}</button>
+      <div className="card">
+        <div className="card-header">
+          <h3>Registrar pago de cuota</h3>
+        </div>
+        {error && <div className="error-message">{error}</div>}
+        <form onSubmit={handleSubmit} className="form-grid">
+          <div className="form-group">
+            <label htmlFor="idCredito">ID crédito</label>
+            <input id="idCredito" placeholder="ID crédito" type="number" value={form.idCredito} onChange={e => setForm({ ...form, idCredito: e.target.value })} required disabled={isSubmitting} />
+          </div>
+          <div className="form-group">
+            <label htmlFor="idCuota">Nro. cuota</label>
+            <input id="idCuota" placeholder="Nro. cuota" type="number" min="1" value={form.idCuota} onChange={e => setForm({ ...form, idCuota: e.target.value })} required disabled={isSubmitting} />
+          </div>
+          <div className="form-group">
+            <label htmlFor="importe">Importe</label>
+            <input id="importe" placeholder="Importe" type="number" value={form.importe} onChange={e => setForm({ ...form, importe: e.target.value })} required disabled={isSubmitting} />
+          </div>
+          <button type="submit" className="btn btn-primary" style={{ gridColumn: 'span 3' }} disabled={isSubmitting}>
+            {isSubmitting ? 'Registrando...' : 'Registrar'}
+          </button>
         </form>
       </div>
 
       {buscado && (
-        <div style={styles.card}>
-          <h3>Cobranzas del crédito #{idCredito} ({lista.length})</h3>
-          {loading && <p style={styles.empty}>Cargando...</p>}
-          {!loading && lista.length === 0 && <p style={styles.empty}>Sin cobranzas registradas.</p>}
-          {lista.length > 0 && (
-            <table style={styles.table}>
-              <thead><tr><th>ID</th><th>Crédito</th><th>Cuota</th><th>Importe</th></tr></thead>
-              <tbody>
-                {lista.map(c => (
-                  <tr key={c.id}><td>#{c.id}</td><td>{c.idCredito}</td><td>{c.idCuota}</td><td>${c.importe}</td></tr>
-                ))}
-              </tbody>
-            </table>
+        <div className="card">
+          <div className="card-header">
+            <h3>Cobranzas del crédito #{idCredito} ({lista.length})</h3>
+          </div>
+          {loading && !isSubmitting ? (
+            <div className="loading-container">
+              <div className="spinner"></div>
+              <p>Cargando cobranzas...</p>
+            </div>
+          ) : lista.length === 0 ? (
+            <p style={{ color: '#999', textAlign: 'center', padding: '2rem 0' }}>No hay cobranzas registradas para este crédito.</p>
+          ) : (
+            <div className="table-wrapper">
+              <table className="table">
+                <thead><tr><th>ID</th><th>Crédito</th><th>Cuota</th><th>Importe</th></tr></thead>
+                <tbody>
+                  {lista.map(c => (
+                    <tr key={c.id}><td>#{c.id}</td><td>{c.idCredito}</td><td>{c.idCuota}</td><td>${c.importe}</td></tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )}
         </div>
       )}
     </div>
   );
 }
-
-const styles = {
-  page:  { padding:'32px', maxWidth:'800px', margin:'0 auto' },
-  title: { color:'#1e3a5f', marginBottom:'24px' },
-  card:  { background:'white', padding:'24px', borderRadius:'12px', boxShadow:'0 2px 10px rgba(0,0,0,0.08)', marginBottom:'24px' },
-  row:   { display:'flex', gap:'12px', flexWrap:'wrap' },
-  input: { padding:'10px', border:'1px solid #ccc', borderRadius:'6px', flex:'1', minWidth:'120px' },
-  btn:   { padding:'10px 20px', backgroundColor:'#1e3a5f', color:'white', border:'none', borderRadius:'6px', cursor:'pointer', fontWeight:'bold' },
-  error: { background:'#ffebee', color:'#c62828', padding:'10px', borderRadius:'6px', marginBottom:'12px', fontSize:'0.9rem' },
-  empty: { color:'#999' },
-  table: { width:'100%', borderCollapse:'collapse' },
-};
