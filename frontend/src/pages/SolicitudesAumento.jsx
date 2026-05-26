@@ -187,8 +187,6 @@ export default function SolicitudesAumento() {
           </h3>
         </div>
 
-        {error && <div className="error-message">{error}</div>}
-        
         {mensaje && (
           <div style={{ 
             padding: '10px', 
@@ -206,7 +204,7 @@ export default function SolicitudesAumento() {
             <div className="spinner"></div>
             <p>Cargando solicitudes...</p>
           </div>
-        ) : !error && lista.length === 0 ? (
+        ) : lista.length === 0 ? (
           <p style={{ color: '#999', textAlign: 'center', padding: '2rem 0' }}>No hay solicitudes para mostrar.</p>
         ) : (
           <div className="table-wrapper">

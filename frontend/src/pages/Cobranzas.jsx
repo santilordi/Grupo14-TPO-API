@@ -54,7 +54,7 @@ export default function Cobranzas() {
         dispatch(fetchCobranzasPorCredito(idCredito));
       }
     }
-    setIsSubmitting(true);
+    setIsSubmitting(false);
     setPendingPayment(null);
   };
 
