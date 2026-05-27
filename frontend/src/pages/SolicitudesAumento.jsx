@@ -188,14 +188,14 @@ export default function SolicitudesAumento() {
         </div>
 
         {error && <div className="error-message">{error}</div>}
-        
+
         {mensaje && (
-          <div style={{ 
-            padding: '10px', 
-            marginBottom: '1rem', 
-            borderRadius: '4px', 
-            backgroundColor: mensaje.tipo === 'error' ? '#ffebee' : '#d4edda', 
-            color: mensaje.tipo === 'error' ? '#c62828' : '#155724' 
+          <div style={{
+            padding: '10px',
+            marginBottom: '1rem',
+            borderRadius: '4px',
+            backgroundColor: mensaje.tipo === 'error' ? '#ffebee' : '#d4edda',
+            color: mensaje.tipo === 'error' ? '#c62828' : '#155724'
           }}>
             {mensaje.texto}
           </div>
