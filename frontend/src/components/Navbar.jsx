@@ -33,6 +33,9 @@ export default function Navbar() {
           <Link to="/creditos" style={styles.link}>Créditos</Link>
           <Link to="/cobranzas" style={styles.link}>Cobranzas</Link>
           <Link to="/solicitudes" style={styles.link}>Solicitudes</Link>
+          {user.rol === 'ADMIN' && (
+            <Link to="/admin/permisos" style={styles.link}>Gestión Permisos</Link>
+          )}
           <span style={styles.user}>👤 {user.username}</span>
           <button onClick={handleLogoutClick} style={styles.btn}>Salir</button>
         </div>
