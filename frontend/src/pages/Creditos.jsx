@@ -11,6 +11,7 @@ const formatearFecha = (fechaStr) => {
 export default function Creditos() {
   const dispatch = useDispatch();
   const { lista, loading, error } = useSelector((state) => state.creditos);
+  const user = useSelector((state) => state.auth.user);
   const [dni, setDni] = useState('');
   const [buscado, setBuscado] = useState(false);
   const [form, setForm] = useState({ dniCliente: '', deudaOriginal: '', fecha: '', importeCuota: '', cantidadCuotas: '' });
@@ -19,6 +20,11 @@ export default function Creditos() {
   const [pendingCredit, setPendingCredit] = useState(null);
   const [expandedIds, setExpandedIds] = useState({});
   const [validacionError, setValidationError] = useState('');
+  const [creditosAnulados, setCreditosAnulados] = useState(() => new Set());
+  const [creditoPendienteAnular, setCreditoPendienteAnular] = useState(null);
+  const [mensajeAnulacion, setMensajeAnulacion] = useState('');
+
+  const puedeAnularCredito = user?.rol === 'ADMIN' || user?.puedeAnularCredito === true;
 
   const buscar = async (e) => {
     e.preventDefault();
@@ -84,6 +90,13 @@ export default function Creditos() {
     setPendingCredit(null);
   };
 
+  const confirmarAnulacion = () => {
+    if (!creditoPendienteAnular) return;
+    setCreditosAnulados((prev) => new Set(prev).add(creditoPendienteAnular.id));
+    setMensajeAnulacion(`Crédito #${creditoPendienteAnular.id} marcado como anulado.`);
+    setCreditoPendienteAnular(null);
+  };
+
   const formatCurrency = (amount) => {
     return `$${Number(amount).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   };
@@ -109,6 +122,7 @@ export default function Creditos() {
         <div className="card-header">
           <h3>Nuevo crédito</h3>
         </div>
+        {mensajeAnulacion && <div style={{ color: '#475569', backgroundColor: '#f1f5f9', padding: '10px', borderRadius: '4px', marginBottom: '1rem' }}>{mensajeAnulacion}</div>}
         {(error || validacionError) && <div className="error-message">{error || validacionError}</div>}
         <form onSubmit={handlePreSubmit} className="form-grid">
           <div className="form-group">
@@ -156,14 +170,16 @@ export default function Creditos() {
               const cuotasPagadas = cr.cuotas ? cr.cuotas.filter(c => c.pagada).length : 0;
               const porcentajeProgreso = totalCuotas > 0 ? (cuotasPagadas / totalCuotas) * 100 : 0;
               const estaExpandido = !!expandedIds[cr.id];
+              const estaAnulado = cr.anulado || creditosAnulados.has(cr.id);
 
               return (
-                <div key={cr.id} style={{ borderLeft: '4px solid #1e3a5f', paddingLeft: '16px', marginBottom: '20px', paddingBottom: '16px', borderBottom: '1px solid #eee' }}>
+                <div key={cr.id} style={{ borderLeft: `4px solid ${estaAnulado ? '#94a3b8' : '#1e3a5f'}`, paddingLeft: '16px', marginBottom: '20px', paddingBottom: '16px', borderBottom: '1px solid #eee', backgroundColor: estaAnulado ? '#f1f5f9' : 'transparent', opacity: estaAnulado ? 0.7 : 1 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem' }}>
                     <div style={{ flex: 1, minWidth: '250px' }}>
                       <p style={{ marginBottom: '8px' }}>
                         <strong>ID #{cr.id}</strong> &mdash; Deuda: {formatCurrency(cr.deudaOriginal)} &mdash; {cr.cantidadCuotas} cuotas de {formatCurrency(cr.importeCuota)}
                       </p>
+                      {estaAnulado && <span style={{ color: '#475569', fontSize: '0.8rem', fontWeight: 'bold' }}>ANULADO</span>}
                       <p style={{ fontSize: '0.85rem', color: '#666', marginBottom: '4px' }}>
                         Progreso: {cuotasPagadas}/{totalCuotas} cuotas pagadas
                       </p>
@@ -171,13 +187,24 @@ export default function Creditos() {
                         <div style={{ height: '100%', backgroundColor: '#28a745', width: `${porcentajeProgreso}%`, transition: 'width 0.3s ease' }} />
                       </div>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => toggleExpandir(cr.id)}
-                      style={{ backgroundColor: '#f0f4f8', color: '#1e3a5f', border: '1px solid #cce0ff', padding: '6px 12px', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}
-                    >
-                      {estaExpandido ? '▲ Ocultar Cuotas' : '▼ Ver Cuotas'}
-                    </button>
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      <button
+                        type="button"
+                        onClick={() => toggleExpandir(cr.id)}
+                        style={{ backgroundColor: '#f0f4f8', color: '#1e3a5f', border: '1px solid #cce0ff', padding: '6px 12px', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}
+                      >
+                        {estaExpandido ? '▲ Ocultar Cuotas' : '▼ Ver Cuotas'}
+                      </button>
+                      {puedeAnularCredito && !estaAnulado && (
+                        <button
+                          type="button"
+                          onClick={() => setCreditoPendienteAnular(cr)}
+                          style={{ backgroundColor: '#fee2e2', color: '#b91c1c', border: '1px solid #fecaca', padding: '6px 12px', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}
+                        >
+                          Anular
+                        </button>
+                      )}
+                    </div>
                   </div>
 
                   {estaExpandido && cr.cuotas && (
@@ -220,6 +247,17 @@ export default function Creditos() {
         type="primary"
         onConfirm={handleConfirm}
         onCancel={handleCancel}
+      />
+
+      <ConfirmDialog
+        isOpen={Boolean(creditoPendienteAnular)}
+        title="Anular crédito"
+        message={creditoPendienteAnular ? `¿Confirmás la anulación del crédito #${creditoPendienteAnular.id}?` : ''}
+        confirmText="Anular"
+        cancelText="Cancelar"
+        type="danger"
+        onConfirm={confirmarAnulacion}
+        onCancel={() => setCreditoPendienteAnular(null)}
       />
     </div>
   );

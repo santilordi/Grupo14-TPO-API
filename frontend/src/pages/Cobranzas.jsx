@@ -6,6 +6,7 @@ import ConfirmDialog from '../components/ConfirmDialog';
 export default function Cobranzas() {
   const dispatch = useDispatch();
   const { lista, loading, error } = useSelector((state) => state.cobranzas);
+  const user = useSelector((state) => state.auth.user);
   
   const [idCredito, setIdCredito] = useState('');
   const [buscado, setBuscado]     = useState(false);
@@ -15,6 +16,11 @@ export default function Cobranzas() {
   //Estaods para el dialogo de confirmacion
   const [showPaymentConfirm, setShowPaymentConfirm] = useState(false);
   const [pendingPayment, setPendingPayment] = useState(null);
+  const [cobranzasAnuladas, setCobranzasAnuladas] = useState(() => new Set());
+  const [cobranzaPendienteAnular, setCobranzaPendienteAnular] = useState(null);
+  const [mensajeAnulacion, setMensajeAnulacion] = useState('');
+
+  const puedeAnularCobranza = user?.rol === 'ADMIN' || user?.puedeAnularCobranza === true;
 
   const buscar = async (e) => {
     e.preventDefault();
@@ -63,7 +69,17 @@ export default function Cobranzas() {
     setPendingPayment(null);
   };
 
-  const totalCobrado = lista.reduce((acc, curr) => acc + Number(curr.importe), 0);
+  const confirmarAnulacion = () => {
+    if (!cobranzaPendienteAnular) return;
+    setCobranzasAnuladas((prev) => new Set(prev).add(cobranzaPendienteAnular.id));
+    setMensajeAnulacion(`Pago #${cobranzaPendienteAnular.id} marcado como anulado.`);
+    setCobranzaPendienteAnular(null);
+  };
+
+  const totalCobrado = lista.reduce(
+    (acc, curr) => (curr.anulada || cobranzasAnuladas.has(curr.id) ? acc : acc + Number(curr.importe)),
+    0
+  );
 
   const formatCurrency = (amount) => {
     return `$${Number(amount).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -93,6 +109,7 @@ export default function Cobranzas() {
           <h3>Registrar pago de cuota</h3>
         </div>
         {error && <div className="error-message">{error}</div>}
+        {mensajeAnulacion && <div style={{ color: '#475569', backgroundColor: '#f1f5f9', padding: '10px', borderRadius: '4px', marginBottom: '1rem' }}>{mensajeAnulacion}</div>}
         <form onSubmit={handlePreSubmit} className="form-grid">
           <div className="form-group">
             <label htmlFor="idCredito">ID crédito</label>
@@ -138,17 +155,37 @@ export default function Cobranzas() {
                     <th>ID Crédito</th>
                     <th>Nro. Cuota</th>
                     <th>Importe</th>
+                    <th>Estado</th>
+                    {puedeAnularCobranza && <th>Acciones</th>}
                   </tr>
                 </thead>
                 <tbody>
-                  {lista.map(c => (
-                    <tr key={c.id}>
+                  {lista.map(c => {
+                    const estaAnulada = c.anulada || cobranzasAnuladas.has(c.id);
+
+                    return (
+                    <tr key={c.id} style={{ backgroundColor: estaAnulada ? '#f1f5f9' : 'transparent', color: estaAnulada ? '#64748b' : 'inherit', opacity: estaAnulada ? 0.7 : 1 }}>
                       <td>#{c.id}</td>
                       <td>{c.idCredito}</td>
                       <td>{c.idCuota}</td>
                       <td style={{ fontWeight: 'bold', color: '#166534' }}>{formatCurrency(c.importe)}</td>
+                      <td>{estaAnulada ? 'Anulada' : 'Registrada'}</td>
+                      {puedeAnularCobranza && (
+                        <td>
+                          {!estaAnulada && (
+                            <button
+                              type="button"
+                              onClick={() => setCobranzaPendienteAnular(c)}
+                              style={{ backgroundColor: '#fee2e2', color: '#b91c1c', border: '1px solid #fecaca', padding: '6px 12px', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}
+                            >
+                              Anular
+                            </button>
+                          )}
+                        </td>
+                      )}
                     </tr>
-                  ))}
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
@@ -165,6 +202,17 @@ export default function Cobranzas() {
         type="primary"
         onConfirm={handleConfirmPayment}
         onCancel={handleCancelPayment}
+      />
+
+      <ConfirmDialog
+        isOpen={Boolean(cobranzaPendienteAnular)}
+        title="Anular pago"
+        message={cobranzaPendienteAnular ? `¿Confirmás la anulación del pago #${cobranzaPendienteAnular.id}?` : ''}
+        confirmText="Anular"
+        cancelText="Cancelar"
+        type="danger"
+        onConfirm={confirmarAnulacion}
+        onCancel={() => setCobranzaPendienteAnular(null)}
       />
     </div>
   );
