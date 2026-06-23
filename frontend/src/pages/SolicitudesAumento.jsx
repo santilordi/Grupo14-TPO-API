@@ -1,23 +1,28 @@
 import { useCallback, useEffect, useState } from 'react';
+import { useSelector, useDispatch } from 'react-redux';
 import {
-  aprobarSolicitud,
-  crearSolicitud,
-  listarPendientes,
-  listarSolicitudes,
-  rechazarSolicitud,
-} from '../api/solicitudes';
+  fetchSolicitudes,
+  fetchPendientes,
+  addSolicitud,
+  aprobar,
+  rechazar,
+  clearError,
+} from '../store/slices/solicitudesSlice';
 import '../styles/SolicitudesAumento.css';
 import ConfirmDialog from '../components/ConfirmDialog';
 
 const estadoInicialForm = { dniCliente: '', montoSolicitado: '' };
 
 export default function SolicitudesAumento() {
-  const [lista, setLista] = useState([]);
+  // ── Redux state ─────────────────────────────────────────────────────────────
+  const dispatch = useDispatch();
+  const { lista, loading, error } = useSelector((state) => state.solicitudes);
+
+  // ── UI-only local state ──────────────────────────────────────────────────────
   const [form, setForm] = useState(estadoInicialForm);
-  const [loading, setLoading] = useState(false);
   const [guardando, setGuardando] = useState(false);
   const [accionId, setAccionId] = useState(null);
-  const [mensaje, setMensaje] = useState(null);
+  const [mensajeExito, setMensajeExito] = useState(null);
   const [filtro, setFiltro] = useState('todas');
 
   const [showCreateConfirm, setShowCreateConfirm] = useState(false);
@@ -26,26 +31,21 @@ export default function SolicitudesAumento() {
   const [showActionConfirm, setShowActionConfirm] = useState(false);
   const [pendingAction, setPendingAction] = useState(null);
 
-  const cargar = useCallback(async (pendientes) => {
-    setLoading(true);
-    try {
-      const data = pendientes ? await listarPendientes() : await listarSolicitudes();
-      setLista(data);
-    } catch (err) {
-      setMensaje({ tipo: 'error', texto: err.message });
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  // ── Carga de datos ───────────────────────────────────────────────────────────
+  const cargar = useCallback((pendientes) => {
+    dispatch(pendientes ? fetchPendientes() : fetchSolicitudes());
+  }, [dispatch]);
 
   useEffect(() => { cargar(false); }, [cargar]);
 
   const cambiarFiltro = (nuevo) => {
     setFiltro(nuevo);
-    setMensaje(null);
+    setMensajeExito(null);
+    dispatch(clearError());
     cargar(nuevo === 'pendientes');
   };
 
+  // ── Crear solicitud ──────────────────────────────────────────────────────────
   const handleSubmit = (event) => {
     event.preventDefault();
     if (!form.dniCliente.trim() || !form.montoSolicitado) return;
@@ -57,14 +57,15 @@ export default function SolicitudesAumento() {
     setShowCreateConfirm(false);
     if (!pendingCreate) return;
     setGuardando(true);
-    setMensaje(null);
+    setMensajeExito(null);
+    dispatch(clearError());
     try {
-      await crearSolicitud(pendingCreate);
-      setForm(estadoInicialForm);
-      setMensaje({ tipo: 'exito', texto: 'Solicitud creada correctamente.' });
-      await cargar(filtro === 'pendientes');
-    } catch (err) {
-      setMensaje({ tipo: 'error', texto: err.message });
+      const result = await dispatch(addSolicitud(pendingCreate));
+      if (addSolicitud.fulfilled.match(result)) {
+        setForm(estadoInicialForm);
+        setMensajeExito('Solicitud creada correctamente.');
+        cargar(filtro === 'pendientes');
+      }
     } finally {
       setGuardando(false);
       setPendingCreate(null);
@@ -76,6 +77,7 @@ export default function SolicitudesAumento() {
     setPendingCreate(null);
   };
 
+  // ── Aprobar / Rechazar ───────────────────────────────────────────────────────
   const cambiarEstado = (solicitud, accion) => {
     setPendingAction({ solicitud, accion });
     setShowActionConfirm(true);
@@ -86,17 +88,15 @@ export default function SolicitudesAumento() {
     if (!pendingAction) return;
     const { solicitud, accion } = pendingAction;
     setAccionId(solicitud.id);
-    setMensaje(null);
+    setMensajeExito(null);
+    dispatch(clearError());
     try {
-      if (accion === 'aprobar') {
-        await aprobarSolicitud(solicitud.id);
-      } else {
-        await rechazarSolicitud(solicitud.id);
+      const thunk = accion === 'aprobar' ? aprobar : rechazar;
+      const result = await dispatch(thunk(solicitud.id));
+      if (thunk.fulfilled.match(result)) {
+        setMensajeExito(`Solicitud #${solicitud.id} ${accion === 'aprobar' ? 'aprobada' : 'rechazada'} correctamente.`);
+        cargar(filtro === 'pendientes');
       }
-      setMensaje({ tipo: 'exito', texto: `Solicitud #${solicitud.id} ${accion === 'aprobar' ? 'aprobada' : 'rechazada'} correctamente.` });
-      await cargar(filtro === 'pendientes');
-    } catch (err) {
-      setMensaje({ tipo: 'error', texto: err.message });
     } finally {
       setAccionId(null);
       setPendingAction(null);
@@ -108,11 +108,13 @@ export default function SolicitudesAumento() {
     setPendingAction(null);
   };
 
+  // ── Helpers ──────────────────────────────────────────────────────────────────
   const badgeClass = (estado) => {
     const map = { PENDIENTE: 'sa-badge-pendiente', APROBADO: 'sa-badge-aprobado', RECHAZADO: 'sa-badge-rechazado' };
     return `sa-badge ${map[estado] ?? ''}`;
   };
 
+  // ── Render ───────────────────────────────────────────────────────────────────
   return (
     <div className="container">
       <h2>Solicitudes de Aumento</h2>
@@ -152,7 +154,12 @@ export default function SolicitudesAumento() {
           </h3>
         </div>
 
-        {mensaje && <div className={mensaje.tipo === 'error' ? 'error-message' : 'error-message'} style={mensaje.tipo === 'exito' ? { backgroundColor: 'var(--color-success-light)', color: 'var(--color-success)', borderColor: 'var(--color-success)' } : {}}>{mensaje.texto}</div>}
+        {mensajeExito && (
+          <div className="error-message" style={{ backgroundColor: 'var(--color-success-light)', color: 'var(--color-success)', borderColor: 'var(--color-success)' }}>
+            {mensajeExito}
+          </div>
+        )}
+        {error && <div className="error-message">{error}</div>}
 
         {loading ? (
           <div className="loading-container">

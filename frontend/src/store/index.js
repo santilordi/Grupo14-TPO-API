@@ -4,6 +4,7 @@ import clientesReducer from './slices/clientesSlice';
 import creditosReducer from './slices/creditosSlice';
 import cobranzasReducer from './slices/cobranzasSlice';
 import permisosReducer from './slices/permisosSlice';
+import solicitudesReducer from './slices/solicitudesSlice';
 
 const store = configureStore({
   reducer: {
@@ -12,6 +13,7 @@ const store = configureStore({
     creditos: creditosReducer,
     cobranzas: cobranzasReducer,
     permisos: permisosReducer,
+    solicitudes: solicitudesReducer,
   },
 });
 
