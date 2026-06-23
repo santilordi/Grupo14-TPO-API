@@ -25,7 +25,15 @@ public class JwtUtil {
     }
 
     public String generarToken(UserDetails userDetails) {
+        // 1. Extraemos el rol desde las authorities del userDetails
+        String role = userDetails.getAuthorities().stream()
+                .map(grantedAuthority -> grantedAuthority.getAuthority())
+                .findFirst()
+                .orElse("ROLE_USER"); // Rol por defecto si no tiene ninguno
+
+        // 2. Metemos el rol dentro de los claims del JWT
         return Jwts.builder()
+            .claim("role", role) // <--- ACÁ SE METE EL ROL EN EL PAYLOAD
             .subject(userDetails.getUsername())
             .issuedAt(new Date())
             .expiration(new Date(System.currentTimeMillis() + expirationMs))
