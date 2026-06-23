@@ -7,6 +7,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -27,29 +28,34 @@ public class SolicitudAumentoController {
     // GET /api/solicitudes/pendientes → listar solicitudes pendientes
     // GET /api/solicitudes → listar todas las solicitudes
     @GetMapping
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<List<SolicitudAumentoResponse>> listarTodas() {
         return ResponseEntity.ok(solicitudAumentoService.obtenerTodas());
     }
 
     @GetMapping("/pendientes")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<List<SolicitudAumentoResponse>> obtenerPendientes() {
         return ResponseEntity.ok(solicitudAumentoService.obtenerPendientes());
     }
 
     // GET /api/solicitudes/{id} → buscar solicitud por ID
     @GetMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<SolicitudAumentoResponse> buscarPorId(@PathVariable Long id) {
         return ResponseEntity.ok(solicitudAumentoService.buscarSolicitudPorId(id));
     }
 
     // PATCH /api/solicitudes/{id}/aprobar → aprobar una solicitud
     @PatchMapping("/{id}/aprobar")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<SolicitudAumentoResponse> aprobar(@PathVariable Long id) {
         return ResponseEntity.ok(solicitudAumentoService.aprobarSolicitud(id));
     }
 
     // PATCH /api/solicitudes/{id}/rechazar → rechazar una solicitud
     @PatchMapping("/{id}/rechazar")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<SolicitudAumentoResponse> rechazar(@PathVariable Long id) {
         return ResponseEntity.ok(solicitudAumentoService.rechazarSolicitud(id));
     }
