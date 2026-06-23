@@ -103,18 +103,18 @@ export default function Creditos() {
 
   return (
     <div className="container">
-      <h2 style={{ color: '#1e3a5f', marginBottom: '24px' }}>Créditos</h2>
+      <h2>Créditos</h2>
 
       <div className="card">
         <div className="card-header">
           <h3>Buscar créditos por cliente</h3>
         </div>
-        <form onSubmit={buscar} style={{ display: 'flex', gap: '1rem', alignItems: 'flex-end' }}>
-          <div className="form-group" style={{ flex: 1 }}>
+        <form onSubmit={buscar} className="form-grid" style={{ gridTemplateColumns: '1fr auto' }}>
+          <div className="form-group">
             <label htmlFor="dni-buscar">DNI del cliente</label>
             <input id="dni-buscar" placeholder="DNI del cliente" value={dni} onChange={e => setDni(e.target.value)} required />
           </div>
-          <button type="submit" className="btn btn-primary" disabled={loading && !isSubmitting}>Buscar</button>
+          <button type="submit" className="btn btn-primary" style={{ alignSelf: 'end' }} disabled={loading && !isSubmitting}>Buscar</button>
         </form>
       </div>
 
@@ -122,9 +122,9 @@ export default function Creditos() {
         <div className="card-header">
           <h3>Nuevo crédito</h3>
         </div>
-        {mensajeAnulacion && <div style={{ color: '#475569', backgroundColor: '#f1f5f9', padding: '10px', borderRadius: '4px', marginBottom: '1rem' }}>{mensajeAnulacion}</div>}
+        {mensajeAnulacion && <div className="error-message" style={{ backgroundColor: '#f1f5f9', color: '#475569', borderColor: '#e2e8f0' }}>{mensajeAnulacion}</div>}
         {(error || validacionError) && <div className="error-message">{error || validacionError}</div>}
-        <form onSubmit={handlePreSubmit} className="form-grid">
+        <form onSubmit={handlePreSubmit} className="form-grid" style={{ gridTemplateColumns: 'repeat(3, 1fr)' }}>
           <div className="form-group">
             <label htmlFor="dniCliente">DNI cliente</label>
             <input id="dniCliente" placeholder="DNI cliente" value={form.dniCliente} onChange={e => setForm({ ...form, dniCliente: e.target.value })} required disabled={isSubmitting} />
@@ -145,7 +145,7 @@ export default function Creditos() {
             <label htmlFor="cantidadCuotas">Cant. cuotas</label>
             <input id="cantidadCuotas" placeholder="Cant. cuotas" value={form.cantidadCuotas} onChange={e => setForm({ ...form, cantidadCuotas: e.target.value })} type="number" min="1" required disabled={isSubmitting} />
           </div>
-          <button type="submit" className="btn btn-primary" style={{ gridColumn: 'span 2' }} disabled={isSubmitting}>
+          <button type="submit" className="btn btn-primary" style={{ gridColumn: 'span 3' }} disabled={isSubmitting}>
             {isSubmitting ? 'Guardando...' : 'Crear crédito'}
           </button>
         </form>
@@ -163,7 +163,7 @@ export default function Creditos() {
               <p>Cargando créditos...</p>
             </div>
           ) : lista.length === 0 ? (
-            <p style={{ color: '#999', textAlign: 'center', padding: '2rem 0' }}>El cliente no tiene créditos registrados.</p>
+            <p className="text-muted" style={{ textAlign: 'center', padding: 'var(--spacing-xl) 0' }}>El cliente no tiene créditos registrados.</p>
           ) : (
             lista.map(cr => {
               const totalCuotas = cr.cuotas ? cr.cuotas.length : cr.cantidadCuotas;
@@ -173,34 +173,24 @@ export default function Creditos() {
               const estaAnulado = cr.anulado || creditosAnulados.has(cr.id);
 
               return (
-                <div key={cr.id} style={{ borderLeft: `4px solid ${estaAnulado ? '#94a3b8' : '#1e3a5f'}`, paddingLeft: '16px', marginBottom: '20px', paddingBottom: '16px', borderBottom: '1px solid #eee', backgroundColor: estaAnulado ? '#f1f5f9' : 'transparent', opacity: estaAnulado ? 0.7 : 1 }}>
+                <div key={cr.id} className="card" style={{ backgroundColor: estaAnulado ? '#f1f5f9' : 'transparent', opacity: estaAnulado ? 0.7 : 1 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem' }}>
                     <div style={{ flex: 1, minWidth: '250px' }}>
-                      <p style={{ marginBottom: '8px' }}>
-                        <strong>ID #{cr.id}</strong> &mdash; Deuda: {formatCurrency(cr.deudaOriginal)} &mdash; {cr.cantidadCuotas} cuotas de {formatCurrency(cr.importeCuota)}
-                      </p>
-                      {estaAnulado && <span style={{ color: '#475569', fontSize: '0.8rem', fontWeight: 'bold' }}>ANULADO</span>}
-                      <p style={{ fontSize: '0.85rem', color: '#666', marginBottom: '4px' }}>
+                      <p><strong>ID #{cr.id}</strong> &mdash; Deuda: {formatCurrency(cr.deudaOriginal)}</p>
+                      {estaAnulado && <span className="badge badge-danger">ANULADO</span>}
+                      <p className="text-muted" style={{ fontSize: '0.85rem' }}>
                         Progreso: {cuotasPagadas}/{totalCuotas} cuotas pagadas
                       </p>
                       <div style={{ width: '100%', maxWidth: '300px', backgroundColor: '#e0e0e0', borderRadius: '4px', height: '8px', overflow: 'hidden' }}>
-                        <div style={{ height: '100%', backgroundColor: '#28a745', width: `${porcentajeProgreso}%`, transition: 'width 0.3s ease' }} />
+                        <div style={{ height: '100%', backgroundColor: 'var(--color-success)', width: `${porcentajeProgreso}%`, transition: 'width 0.3s ease' }} />
                       </div>
                     </div>
-                    <div style={{ display: 'flex', gap: '8px' }}>
-                      <button
-                        type="button"
-                        onClick={() => toggleExpandir(cr.id)}
-                        style={{ backgroundColor: '#f0f4f8', color: '#1e3a5f', border: '1px solid #cce0ff', padding: '6px 12px', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}
-                      >
-                        {estaExpandido ? '▲ Ocultar Cuotas' : '▼ Ver Cuotas'}
+                    <div style={{ display: 'flex', gap: 'var(--spacing-sm)' }}>
+                      <button type="button" onClick={() => toggleExpandir(cr.id)} className="btn btn-secondary">
+                        {estaExpandido ? 'Ocultar' : 'Ver Cuotas'}
                       </button>
                       {puedeAnularCredito && !estaAnulado && (
-                        <button
-                          type="button"
-                          onClick={() => setCreditoPendienteAnular(cr)}
-                          style={{ backgroundColor: '#fee2e2', color: '#b91c1c', border: '1px solid #fecaca', padding: '6px 12px', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}
-                        >
+                        <button type="button" onClick={() => setCreditoPendienteAnular(cr)} className="btn btn-danger">
                           Anular
                         </button>
                       )}
@@ -208,7 +198,7 @@ export default function Creditos() {
                   </div>
 
                   {estaExpandido && cr.cuotas && (
-                    <div className="table-wrapper" style={{ marginTop: '16px' }}>
+                    <div className="table-wrapper" style={{ marginTop: 'var(--spacing-md)' }}>
                       <table className="table">
                         <thead>
                           <tr>
@@ -222,7 +212,7 @@ export default function Creditos() {
                             <tr key={c.idCuota}>
                               <td>{c.idCuota}</td>
                               <td>{formatearFecha(c.fechaVencimiento)}</td>
-                              <td style={{ color: c.pagada ? '#2e7d32' : '#c62828', fontWeight: 'bold' }}>
+                              <td className={c.pagada ? 'text-success' : 'text-danger'}>
                                 {c.pagada ? 'Pagada' : 'Pendiente'}
                               </td>
                             </tr>
@@ -241,7 +231,7 @@ export default function Creditos() {
       <ConfirmDialog
         isOpen={showConfirm}
         title="Confirmar Creación de Crédito"
-        message={pendingCredit ? `¿Estás seguro de que deseas crear un crédito por ${formatCurrency(pendingCredit.deudaOriginal)} en ${pendingCredit.cantidadCuotas} cuotas de ${formatCurrency(pendingCredit.importeCuota)} para el cliente con DNI ${pendingCredit.dniCliente}? Se generarán automáticamente las cuotas correspondientes.` : ''}
+        message={pendingCredit ? `¿Estás seguro de que deseas crear un crédito por ${formatCurrency(pendingCredit.deudaOriginal)} en ${pendingCredit.cantidadCuotas} cuotas de ${formatCurrency(pendingCredit.importeCuota)} para el cliente con DNI ${pendingCredit.dniCliente}?` : ''}
         confirmText="Crear Crédito"
         cancelText="Cancelar"
         type="primary"
