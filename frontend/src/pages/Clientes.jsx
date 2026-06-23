@@ -21,21 +21,19 @@ export default function Clientes() {
   const handlePreSubmit = (e) => {
     e.preventDefault();
     
-    // 1. Limpiamos mensajes anteriores
     setSuccess('');
     setFormError('');
 
     const dni = form.dni.trim();
     const nombre = form.nombre.trim();
 
-    // 2. Hacemos las validaciones de main
     if (!dni || !nombre) {
       setFormError('DNI y nombre son obligatorios.');
       return;
     }
 
     if (!/^\d+$/.test(dni)) {
-      setFormError('El DNI debe contener solo numeros.');
+      setFormError('El DNI debe contener solo números.');
       return;
     }
 
@@ -44,7 +42,6 @@ export default function Clientes() {
       return;
     }
 
-    // 3. Si todo es válido, guardamos los datos temporalmente y abrimos el modal de confirmación
     setPendingClient({ dni, nombre });
     setShowConfirm(true);
   };
@@ -55,7 +52,6 @@ export default function Clientes() {
     
     setIsSubmitting(true);
     
-    // 4. Enviamos al backend
     const result = await dispatch(addCliente(pendingClient));
 
     if (result.meta.requestStatus === 'fulfilled') {
@@ -74,28 +70,27 @@ export default function Clientes() {
 
   return (
     <div className="container">
-      <h2 style={{ color: '#1e3a5f', marginBottom: '24px' }}>Clientes</h2>
+      <h2>Clientes</h2>
 
       <div className="card">
         <div className="card-header">
             <h3>Nuevo cliente</h3>
         </div>
         
-        {/* Mensajes de validación y éxito combinados */}
-        {success && <div style={{ color: '#155724', backgroundColor: '#d4edda', padding: '10px', borderRadius: '4px', marginBottom: '1rem' }}>{success}</div>}
+        {success && <div className="error-message" style={{ backgroundColor: 'var(--color-success-light)', color: 'var(--color-success)', borderColor: 'var(--color-success)' }}>{success}</div>}
         {formError && <div className="error-message">{formError}</div>}
         {error && <div className="error-message">{error}</div>}
 
-        <form onSubmit={handlePreSubmit} className="form-grid" style={{ display: 'flex', alignItems: 'flex-end', gap: '1rem' }}>
-          <div className="form-group" style={{ flex: 1 }}>
+        <form onSubmit={handlePreSubmit} className="form-grid" style={{ gridTemplateColumns: '1fr 2fr auto' }}>
+          <div className="form-group">
               <label htmlFor="dni">DNI</label>
               <input id="dni" placeholder="DNI" value={form.dni} onChange={e => setForm({...form, dni: e.target.value})} required disabled={isSubmitting} />
           </div>
-          <div className="form-group" style={{ flex: 2 }}>
+          <div className="form-group">
               <label htmlFor="nombre">Nombre completo</label>
               <input id="nombre" placeholder="Nombre completo" value={form.nombre} onChange={e => setForm({...form, nombre: e.target.value})} required disabled={isSubmitting} />
           </div>
-          <button type="submit" className="btn btn-primary" disabled={isSubmitting} style={{ height: '42px' }}>
+          <button type="submit" className="btn btn-primary" disabled={isSubmitting} style={{ alignSelf: 'end' }}>
               {isSubmitting ? 'Guardando...' : 'Agregar'}
           </button>
         </form>
@@ -112,7 +107,7 @@ export default function Clientes() {
             <p>Cargando clientes...</p>
           </div>
         ) : lista.length === 0 ? (
-          <p style={{ color: '#999', textAlign: 'center', padding: '2rem 0' }}>No hay clientes registrados.</p>
+          <p className="text-muted" style={{ textAlign: 'center', padding: 'var(--spacing-xl) 0' }}>No hay clientes registrados.</p>
         ) : (
           <div className="table-wrapper">
               <table className="table">
@@ -134,10 +129,9 @@ export default function Clientes() {
                         <td>{c.nombre}</td>
                       </tr>
                       
-                      {/* Fila desplegable con el Límite de Crédito */}
                       {clienteExpandido === c.dni && (
                         <tr>
-                          <td colSpan="2" style={{ backgroundColor: '#f8f9fa', padding: '1rem', borderLeft: '4px solid #1e3a5f' }}>
+                          <td colSpan="2" style={{ backgroundColor: '#f8f9fa', padding: 'var(--spacing-md)', borderLeft: '4px solid var(--color-primary)' }}>
                             <strong>Límite de crédito:</strong>{' '}
                             ${Number(c.limiteCredito ?? 0).toLocaleString('es-AR', {
                               minimumFractionDigits: 2,

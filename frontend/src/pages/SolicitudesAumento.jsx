@@ -20,13 +20,11 @@ export default function SolicitudesAumento() {
   const [mensaje, setMensaje] = useState(null);
   const [filtro, setFiltro] = useState('todas');
 
-  // Estados para ConfirmDialog – crear solicitud
   const [showCreateConfirm, setShowCreateConfirm] = useState(false);
   const [pendingCreate, setPendingCreate] = useState(null);
 
-  // Estados para ConfirmDialog – aprobar / rechazar
   const [showActionConfirm, setShowActionConfirm] = useState(false);
-  const [pendingAction, setPendingAction] = useState(null); // { solicitud, accion }
+  const [pendingAction, setPendingAction] = useState(null);
 
   const cargar = useCallback(async (pendientes) => {
     setLoading(true);
@@ -117,87 +115,44 @@ export default function SolicitudesAumento() {
 
   return (
     <div className="container">
-      <h2 style={{ color: '#1e3a5f', marginBottom: '24px' }}>Solicitudes de Aumento</h2>
-
+      <h2>Solicitudes de Aumento</h2>
 
       <div className="card">
         <div className="card-header">
           <h3>Nueva solicitud</h3>
         </div>
-        <form onSubmit={handleSubmit} style={{ display: 'flex', gap: '1rem', alignItems: 'flex-end', padding: '0 0 1rem 0' }}>
-          <div className="form-group" style={{ flex: 1 }}>
+        <form onSubmit={handleSubmit} className="form-grid" style={{ gridTemplateColumns: '1fr 1fr auto' }}>
+          <div className="form-group">
             <label htmlFor="dniCliente">DNI cliente</label>
-            <input
-              id="dniCliente"
-              value={form.dniCliente}
-              onChange={e => setForm({ ...form, dniCliente: e.target.value })}
-              placeholder="DNI"
-              required
-              disabled={guardando}
-            />
+            <input id="dniCliente" value={form.dniCliente} onChange={e => setForm({ ...form, dniCliente: e.target.value })} placeholder="DNI" required disabled={guardando} />
           </div>
-          <div className="form-group" style={{ flex: 1 }}>
+          <div className="form-group">
             <label htmlFor="montoSolicitado">Monto solicitado</label>
-            <input
-              id="montoSolicitado"
-              value={form.montoSolicitado}
-              onChange={e => setForm({ ...form, montoSolicitado: e.target.value })}
-              placeholder="Monto"
-              type="number"
-              min="1"
-              step="0.01"
-              required
-              disabled={guardando}
-            />
+            <input id="montoSolicitado" value={form.montoSolicitado} onChange={e => setForm({ ...form, montoSolicitado: e.target.value })} placeholder="Monto" type="number" min="1" step="0.01" required disabled={guardando} />
           </div>
-          <button type="submit" className="btn btn-primary" disabled={guardando} style={{ height: '42px' }}>
+          <button type="submit" className="btn btn-primary" disabled={guardando} style={{ alignSelf: 'end' }}>
             {guardando ? 'Guardando...' : 'Crear solicitud'}
           </button>
         </form>
       </div>
 
-      {/* Tarjeta para los filtros y la tabla */}
       <div className="card">
         <div className="card-header" style={{ display: 'flex', gap: '1rem', alignItems: 'center', flexWrap: 'wrap' }}>
-
-          <button
-            className={`btn ${filtro === 'todas' ? 'btn-primary' : 'btn-secondary'}`}
-            onClick={() => cambiarFiltro('todas')}
-            disabled={loading}
-          >
+          <button className={`btn ${filtro === 'todas' ? 'btn-primary' : 'btn-secondary'}`} onClick={() => cambiarFiltro('todas')} disabled={loading}>
             Todas
           </button>
-          <button
-            className={`btn ${filtro === 'pendientes' ? 'btn-primary' : 'btn-secondary'}`}
-            onClick={() => cambiarFiltro('pendientes')}
-            disabled={loading}
-          >
+          <button className={`btn ${filtro === 'pendientes' ? 'btn-primary' : 'btn-secondary'}`} onClick={() => cambiarFiltro('pendientes')} disabled={loading}>
             Solo pendientes
           </button>
         </div>
-      </div>
-
-      <div className="card">
         <div className="card-header">
           <h3>
             {filtro === 'pendientes' ? 'Solicitudes pendientes' : 'Todas las solicitudes'}
-            <span style={{ backgroundColor: '#e0e0e0', color: '#333', borderRadius: '12px', padding: '0.2rem 0.6rem', fontSize: '0.8rem', marginLeft: '1rem' }}>
-              {lista.length}
-            </span>
+            <span className="badge" style={{ marginLeft: 'var(--spacing-md)' }}>{lista.length}</span>
           </h3>
         </div>
 
-        {mensaje && (
-          <div style={{ 
-            padding: '10px', 
-            marginBottom: '1rem', 
-            borderRadius: '4px', 
-            backgroundColor: mensaje.tipo === 'error' ? '#ffebee' : '#d4edda', 
-            color: mensaje.tipo === 'error' ? '#c62828' : '#155724' 
-          }}>
-            {mensaje.texto}
-          </div>
-        )}
+        {mensaje && <div className={mensaje.tipo === 'error' ? 'error-message' : 'error-message'} style={mensaje.tipo === 'exito' ? { backgroundColor: 'var(--color-success-light)', color: 'var(--color-success)', borderColor: 'var(--color-success)' } : {}}>{mensaje.texto}</div>}
 
         {loading ? (
           <div className="loading-container">
@@ -205,7 +160,7 @@ export default function SolicitudesAumento() {
             <p>Cargando solicitudes...</p>
           </div>
         ) : lista.length === 0 ? (
-          <p style={{ color: '#999', textAlign: 'center', padding: '2rem 0' }}>No hay solicitudes para mostrar.</p>
+          <p className="text-muted" style={{ textAlign: 'center', padding: 'var(--spacing-xl) 0' }}>No hay solicitudes para mostrar.</p>
         ) : (
           <div className="table-wrapper">
             <table className="table">
@@ -229,24 +184,16 @@ export default function SolicitudesAumento() {
                     <td><span className={badgeClass(s.estado)}>{s.estado}</span></td>
                     <td>
                       {s.estado === 'PENDIENTE' ? (
-                        <div className="sa-actions">
-                          <button
-                            className="sa-action sa-action-approve"
-                            onClick={() => cambiarEstado(s, 'aprobar')}
-                            disabled={accionId === s.id}
-                          >
+                        <div style={{ display: 'flex', gap: 'var(--spacing-sm)' }}>
+                          <button className="btn btn-success" onClick={() => cambiarEstado(s, 'aprobar')} disabled={accionId === s.id}>
                             Aprobar
                           </button>
-                          <button
-                            className="sa-action sa-action-reject"
-                            onClick={() => cambiarEstado(s, 'rechazar')}
-                            disabled={accionId === s.id}
-                          >
+                          <button className="btn btn-danger" onClick={() => cambiarEstado(s, 'rechazar')} disabled={accionId === s.id}>
                             Rechazar
                           </button>
                         </div>
                       ) : (
-                        <span className="sa-muted">Sin acciones</span>
+                        <span className="text-muted">-</span>
                       )}
                     </td>
                   </tr>
@@ -257,7 +204,6 @@ export default function SolicitudesAumento() {
         )}
       </div>
 
-      {/* Modal – Crear solicitud */}
       <ConfirmDialog
         isOpen={showCreateConfirm}
         title="Confirmar solicitud de aumento"
@@ -269,11 +215,10 @@ export default function SolicitudesAumento() {
         onCancel={handleCancelCreate}
       />
 
-      {/* Modal – Aprobar / Rechazar */}
       <ConfirmDialog
         isOpen={showActionConfirm}
         title={pendingAction?.accion === 'aprobar' ? 'Aprobar solicitud' : 'Rechazar solicitud'}
-        message={pendingAction ? `¿Estás seguro de que deseas ${pendingAction.accion === 'aprobar' ? 'aprobar' : 'rechazar'} la solicitud #${pendingAction.solicitud.id} del cliente ${pendingAction.solicitud.dniCliente}? Esta acción no se puede deshacer.` : ''}
+        message={pendingAction ? `¿Estás seguro de que deseas ${pendingAction.accion === 'aprobar' ? 'aprobar' : 'rechazar'} la solicitud #${pendingAction.solicitud.id} del cliente ${pendingAction.solicitud.dniCliente}?` : ''}
         confirmText={pendingAction?.accion === 'aprobar' ? 'Aprobar' : 'Rechazar'}
         cancelText="Cancelar"
         type={pendingAction?.accion === 'rechazar' ? 'danger' : 'primary'}

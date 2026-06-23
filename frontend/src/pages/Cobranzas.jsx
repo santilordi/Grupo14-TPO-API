@@ -13,7 +13,6 @@ export default function Cobranzas() {
   const [form, setForm]           = useState({ idCredito:'', idCuota:'', importe:'' });
   const [isSubmitting, setIsSubmitting] = useState(false);
   
-  //Estaods para el dialogo de confirmacion
   const [showPaymentConfirm, setShowPaymentConfirm] = useState(false);
   const [pendingPayment, setPendingPayment] = useState(null);
   const [cobranzasAnuladas, setCobranzasAnuladas] = useState(() => new Set());
@@ -87,29 +86,27 @@ export default function Cobranzas() {
 
   return (
     <div className="container">
-      <h2 style={{ color: '#1e3a5f', marginBottom: '24px' }}>Cobranzas</h2>
+      <h2>Cobranzas</h2>
 
-      {/* Buscar Cobranzas */}
       <div className="card">
         <div className="card-header">
           <h3>Buscar cobranzas por crédito</h3>
         </div>
-        <form onSubmit={buscar} style={{ display: 'flex', gap: '1rem', alignItems: 'flex-end' }}>
-          <div className="form-group" style={{ flex: 1 }}>
+        <form onSubmit={buscar} className="form-grid" style={{ gridTemplateColumns: '1fr auto' }}>
+          <div className="form-group">
             <label htmlFor="id-credito-buscar">ID del crédito</label>
             <input id="id-credito-buscar" placeholder="ID del crédito" type="number" value={idCredito} onChange={e => setIdCredito(e.target.value)} required />
           </div>
-          <button type="submit" className="btn btn-primary" disabled={loading && !isSubmitting}>Buscar</button>
+          <button type="submit" className="btn btn-primary" style={{ alignSelf: 'end' }} disabled={loading && !isSubmitting}>Buscar</button>
         </form>
       </div>
 
-      {/* Registrar Nuevo Pago */}
       <div className="card">
         <div className="card-header">
           <h3>Registrar pago de cuota</h3>
         </div>
         {error && <div className="error-message">{error}</div>}
-        {mensajeAnulacion && <div style={{ color: '#475569', backgroundColor: '#f1f5f9', padding: '10px', borderRadius: '4px', marginBottom: '1rem' }}>{mensajeAnulacion}</div>}
+        {mensajeAnulacion && <div className="error-message" style={{ backgroundColor: '#f1f5f9', color: '#475569', borderColor: '#e2e8f0' }}>{mensajeAnulacion}</div>}
         <form onSubmit={handlePreSubmit} className="form-grid">
           <div className="form-group">
             <label htmlFor="idCredito">ID crédito</label>
@@ -134,7 +131,7 @@ export default function Cobranzas() {
           <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap' }}>
             <h3>Cobranzas del crédito #{idCredito} ({lista.length})</h3>
             {lista.length > 0 && (
-              <span style={{ backgroundColor: '#e8f5e9', color: '#1b5e20', padding: '6px 12px', borderRadius: '4px', fontWeight: 'bold' }}>
+              <span className="badge badge-success">
                 Total Cobrado: {formatCurrency(totalCobrado)}
               </span>
             )}
@@ -145,7 +142,7 @@ export default function Cobranzas() {
               <p>Cargando cobranzas...</p>
             </div>
           ) : lista.length === 0 ? (
-            <p style={{ color: '#999', textAlign: 'center', padding: '2rem 0' }}>No hay cobranzas registradas para este crédito.</p>
+            <p className="text-muted" style={{ textAlign: 'center', padding: 'var(--spacing-xl) 0' }}>No hay cobranzas registradas para este crédito.</p>
           ) : (
             <div className="table-wrapper">
               <table className="table">
@@ -168,16 +165,12 @@ export default function Cobranzas() {
                       <td>#{c.id}</td>
                       <td>{c.idCredito}</td>
                       <td>{c.idCuota}</td>
-                      <td style={{ fontWeight: 'bold', color: '#166534' }}>{formatCurrency(c.importe)}</td>
-                      <td>{estaAnulada ? 'Anulada' : 'Registrada'}</td>
+                      <td className="text-success">{formatCurrency(c.importe)}</td>
+                      <td><span className={estaAnulada ? 'badge badge-danger' : 'badge badge-success'}>{estaAnulada ? 'Anulada' : 'Registrada'}</span></td>
                       {puedeAnularCobranza && (
                         <td>
                           {!estaAnulada && (
-                            <button
-                              type="button"
-                              onClick={() => setCobranzaPendienteAnular(c)}
-                              style={{ backgroundColor: '#fee2e2', color: '#b91c1c', border: '1px solid #fecaca', padding: '6px 12px', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}
-                            >
+                            <button type="button" onClick={() => setCobranzaPendienteAnular(c)} className="btn btn-danger">
                               Anular
                             </button>
                           )}
@@ -196,7 +189,7 @@ export default function Cobranzas() {
       <ConfirmDialog
         isOpen={showPaymentConfirm}
         title="Confirmar Registro de Pago"
-        message={pendingPayment ? `¿Estás seguro de que deseas registrar el pago de ${formatCurrency(pendingPayment.importe)} para la cuota ${pendingPayment.idCuota} del crédito #${pendingPayment.idCredito}? Esta operación quedará registrada en el sistema.` : ''}
+        message={pendingPayment ? `¿Estás seguro de que deseas registrar el pago de ${formatCurrency(pendingPayment.importe)} para la cuota ${pendingPayment.idCuota} del crédito #${pendingPayment.idCredito}?` : ''}
         confirmText="Confirmar Pago"
         cancelText="Cancelar"
         type="primary"
