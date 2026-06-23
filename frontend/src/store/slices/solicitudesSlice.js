@@ -7,8 +7,6 @@ import {
   rechazarSolicitud,
 } from '../../api/solicitudes';
 
-// ── Thunks ────────────────────────────────────────────────────────────────────
-
 export const fetchSolicitudes = createAsyncThunk(
   'solicitudes/fetchAll',
   async (_, { rejectWithValue }) => {
@@ -64,40 +62,89 @@ export const rechazar = createAsyncThunk(
   }
 );
 
-// ── Slice ─────────────────────────────────────────────────────────────────────
+const initialState = {
+  lista: [],
+  loading: false,
+  error: null,
+};
+
+const updateSolicitud = (lista, solicitudActualizada) => {
+  const index = lista.findIndex((solicitud) => solicitud.id === solicitudActualizada.id);
+  if (index !== -1) {
+    lista[index] = solicitudActualizada;
+  }
+};
 
 const solicitudesSlice = createSlice({
   name: 'solicitudes',
-  initialState: {
-    lista: [],
-    loading: false,
-    error: null,
-  },
+  initialState,
   reducers: {
-    clearError(state) { state.error = null; },
+    clearError(state) {
+      state.error = null;
+    },
   },
   extraReducers: (builder) => {
     builder
-      // fetchSolicitudes
-      .addCase(fetchSolicitudes.pending, (state) => { state.loading = true; state.error = null; })
-      .addCase(fetchSolicitudes.fulfilled, (state, action) => { state.loading = false; state.lista = action.payload; })
-      .addCase(fetchSolicitudes.rejected, (state, action) => { state.loading = false; state.error = action.payload; })
-      // fetchPendientes
-      .addCase(fetchPendientes.pending, (state) => { state.loading = true; state.error = null; })
-      .addCase(fetchPendientes.fulfilled, (state, action) => { state.loading = false; state.lista = action.payload; })
-      .addCase(fetchPendientes.rejected, (state, action) => { state.loading = false; state.error = action.payload; })
-      // addSolicitud
-      .addCase(addSolicitud.pending, (state) => { state.error = null; })
-      .addCase(addSolicitud.fulfilled, (state) => { state.error = null; })
-      .addCase(addSolicitud.rejected, (state, action) => { state.error = action.payload; })
-      // aprobar
-      .addCase(aprobar.pending, (state) => { state.error = null; })
-      .addCase(aprobar.fulfilled, (state) => { state.error = null; })
-      .addCase(aprobar.rejected, (state, action) => { state.error = action.payload; })
-      // rechazar
-      .addCase(rechazar.pending, (state) => { state.error = null; })
-      .addCase(rechazar.fulfilled, (state) => { state.error = null; })
-      .addCase(rechazar.rejected, (state, action) => { state.error = action.payload; });
+      .addCase(fetchSolicitudes.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(fetchSolicitudes.fulfilled, (state, action) => {
+        state.loading = false;
+        state.lista = action.payload;
+      })
+      .addCase(fetchSolicitudes.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+      .addCase(fetchPendientes.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(fetchPendientes.fulfilled, (state, action) => {
+        state.loading = false;
+        state.lista = action.payload;
+      })
+      .addCase(fetchPendientes.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+      .addCase(addSolicitud.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(addSolicitud.fulfilled, (state, action) => {
+        state.loading = false;
+        state.lista.push(action.payload);
+      })
+      .addCase(addSolicitud.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+      .addCase(aprobar.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(aprobar.fulfilled, (state, action) => {
+        state.loading = false;
+        updateSolicitud(state.lista, action.payload);
+      })
+      .addCase(aprobar.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+      .addCase(rechazar.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(rechazar.fulfilled, (state, action) => {
+        state.loading = false;
+        updateSolicitud(state.lista, action.payload);
+      })
+      .addCase(rechazar.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      });
   },
 });
 
