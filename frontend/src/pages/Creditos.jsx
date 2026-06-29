@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { fetchCreditosPorCliente, addCredito, clearCreditos } from '../store/slices/creditosSlice';
+import { fetchCreditosPorCliente, addCredito, clearCreditos, anularCreditoThunk } from '../store/slices/creditosSlice';
 import ConfirmDialog from '../components/ConfirmDialog';
 
 const formatearFecha = (fechaStr) => {
@@ -20,7 +20,6 @@ export default function Creditos() {
   const [pendingCredit, setPendingCredit] = useState(null);
   const [expandedIds, setExpandedIds] = useState({});
   const [validacionError, setValidationError] = useState('');
-  const [creditosAnulados, setCreditosAnulados] = useState(() => new Set());
   const [creditoPendienteAnular, setCreditoPendienteAnular] = useState(null);
   const [mensajeAnulacion, setMensajeAnulacion] = useState('');
 
@@ -90,10 +89,12 @@ export default function Creditos() {
     setPendingCredit(null);
   };
 
-  const confirmarAnulacion = () => {
+  const confirmarAnulacion = async () => {
     if (!creditoPendienteAnular) return;
-    setCreditosAnulados((prev) => new Set(prev).add(creditoPendienteAnular.id));
-    setMensajeAnulacion(`Crédito #${creditoPendienteAnular.id} marcado como anulado.`);
+    const result = await dispatch(anularCreditoThunk(creditoPendienteAnular.id));
+    if (anularCreditoThunk.fulfilled.match(result)) {
+      setMensajeAnulacion(`Crédito #${creditoPendienteAnular.id} anulado correctamente.`);
+    }
     setCreditoPendienteAnular(null);
   };
 
@@ -170,7 +171,7 @@ export default function Creditos() {
               const cuotasPagadas = cr.cuotas ? cr.cuotas.filter(c => c.pagada).length : 0;
               const porcentajeProgreso = totalCuotas > 0 ? (cuotasPagadas / totalCuotas) * 100 : 0;
               const estaExpandido = !!expandedIds[cr.id];
-              const estaAnulado = cr.anulado || creditosAnulados.has(cr.id);
+              const estaAnulado = cr.anulado;
 
               return (
                 <div key={cr.id} className="card" style={{ backgroundColor: estaAnulado ? '#f1f5f9' : 'transparent', opacity: estaAnulado ? 0.7 : 1 }}>

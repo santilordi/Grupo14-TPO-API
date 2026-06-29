@@ -30,4 +30,7 @@ public class Cobranza {
     @NotNull
     @Column(name = "importe", nullable = false, precision = 12, scale = 2)
     private BigDecimal importe;
+
+    @Column(name = "anulada", nullable = false)
+    private Boolean anulada = false;
 }

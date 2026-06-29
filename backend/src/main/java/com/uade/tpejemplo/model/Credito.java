@@ -43,6 +43,9 @@ public class Credito {
     @Column(name = "cantidad_cuotas", nullable = false)
     private Integer cantidadCuotas;
 
+    @Column(name = "anulado", nullable = false)
+    private Boolean anulado = false;
+
     @OneToMany(mappedBy = "credito", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Cuota> cuotas;
 }

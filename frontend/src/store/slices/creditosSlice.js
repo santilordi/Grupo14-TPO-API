@@ -1,5 +1,5 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import { getCreditosPorCliente, crearCredito } from '../../api/creditos';
+import { getCreditosPorCliente, crearCredito, anularCredito } from '../../api/creditos';
 
 export const fetchCreditosPorCliente = createAsyncThunk('creditos/fetchPorCliente', async (dni, { rejectWithValue }) => {
   try {
@@ -12,6 +12,14 @@ export const fetchCreditosPorCliente = createAsyncThunk('creditos/fetchPorClient
 export const addCredito = createAsyncThunk('creditos/add', async (data, { rejectWithValue }) => {
   try {
     return await crearCredito(data);
+  } catch (err) {
+    return rejectWithValue(err.message);
+  }
+});
+
+export const anularCreditoThunk = createAsyncThunk('creditos/anular', async (id, { rejectWithValue }) => {
+  try {
+    return await anularCredito(id);
   } catch (err) {
     return rejectWithValue(err.message);
   }
@@ -35,7 +43,14 @@ const creditosSlice = createSlice({
       .addCase(fetchCreditosPorCliente.rejected,  (state, action) => { state.loading = false; state.error = action.payload; })
       .addCase(addCredito.pending,                (state) => { state.loading = true;  state.error = null; })
       .addCase(addCredito.fulfilled,              (state, action) => { state.loading = false; state.lista.push(action.payload); })
-      .addCase(addCredito.rejected,               (state, action) => { state.loading = false; state.error = action.payload; });
+      .addCase(addCredito.rejected,               (state, action) => { state.loading = false; state.error = action.payload; })
+      .addCase(anularCreditoThunk.pending,         (state) => { state.loading = true;  state.error = null; })
+      .addCase(anularCreditoThunk.fulfilled,       (state, action) => {
+        state.loading = false;
+        const idx = state.lista.findIndex(c => c.id === action.payload.id);
+        if (idx !== -1) state.lista[idx] = action.payload;
+      })
+      .addCase(anularCreditoThunk.rejected,        (state, action) => { state.loading = false; state.error = action.payload; });
   },
 });
 

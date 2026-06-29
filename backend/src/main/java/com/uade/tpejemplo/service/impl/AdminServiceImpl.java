@@ -30,7 +30,7 @@ public class AdminServiceImpl implements AdminService {
     @Transactional
     public UsuarioResponse actualizarPermisos(Long id, PermisosRequest request) {
         Usuario usuario = usuarioRepository.findById(id)
-            .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado con id: " + id));
+            .orElseThrow(() -> new ResourceNotFoundException("Usuario", "id", id));
 
         usuario.setPuedeAnularCredito(request.getPuedeAnularCredito());
         usuario.setPuedeAnularCobranza(request.getPuedeAnularCobranza());

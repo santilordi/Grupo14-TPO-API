@@ -13,4 +13,5 @@ public class CobranzaResponse {
     private Long idCredito;
     private Integer idCuota;
     private BigDecimal importe;
+    private Boolean anulada;
 }
