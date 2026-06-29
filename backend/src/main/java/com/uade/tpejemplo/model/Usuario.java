@@ -34,9 +34,11 @@ public class Usuario implements UserDetails {
     @Column(nullable = false)
     private Rol rol;
 
+    @Builder.Default
     @Column(name = "puede_anular_credito", nullable = false)
     private Boolean puedeAnularCredito = false;
 
+    @Builder.Default
     @Column(name = "puede_anular_cobranza", nullable = false)
     private Boolean puedeAnularCobranza = false;
 
