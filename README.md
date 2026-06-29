@@ -283,6 +283,87 @@ Este módulo centraliza la lógica de negocio para la autorización de límites 
 
 ---
 
+## Entrega 3 — Gestor de Permisos, Anulación y Redux
+
+### Roles de usuario
+
+| Rol | Acceso |
+|-----|--------|
+| `USER` | Puede crear solicitudes de aumento, ver créditos, cobranzas y clientes por DNI |
+| `ADMIN` | Puede crear clientes, gestionar permisos de usuarios, anular créditos y cobranzas, aprobar/rechazar solicitudes |
+
+> Los clientes solo pueden ser creados por un usuario con rol `ADMIN` mediante `POST /api/clientes`.
+> Una vez creado, cualquier usuario autenticado puede referenciarlo al crear una solicitud de aumento.
+
+### Ingreso como ADMIN
+
+Al iniciar la aplicación por primera vez, se crea automáticamente un usuario administrador por defecto:
+
+- **Usuario:** `admin`
+- **Contraseña:** `admin123`
+
+Con este usuario podés acceder a la gestión de permisos (`/admin/permisos`), crear clientes, anular créditos/cobranzas y aprobar/rechazar solicitudes de aumento.
+
+### Gestor de Permisos
+
+El administrador puede habilitar o denegar la capacidad de anular créditos y cobranzas para cada usuario.
+
+**Modelo — Usuario**
+| Campo | Tipo | Descripción |
+|-------|------|-------------|
+| `puedeAnularCredito` | Boolean (default: false) | Permiso para anular créditos |
+| `puedeAnularCobranza` | Boolean (default: false) | Permiso para anular cobranzas |
+
+**Endpoints**
+| Método | Endpoint | Descripción |
+|--------|----------|-------------|
+| GET | `/api/admin/usuarios` | Listar todos los usuarios (ADMIN) |
+| PUT | `/api/admin/usuarios/{id}/permisos` | Actualizar permisos de un usuario (ADMIN) |
+
+**Frontend**
+- Ruta `/admin/permisos` — solo accesible para usuarios con rol `ADMIN`
+- Muestra todos los usuarios con rol `USER` y permite togglear sus permisos
+- Slice Redux: `permisosSlice.js` con thunks `fetchUsuarios` y `updatePermisos`
+
+### Anulación de Créditos y Cobranzas
+
+**Reglas de negocio**
+- Un crédito/cobranza ya anulado no puede volver a anularse (arroja `BusinessException`)
+- Solo usuarios con permiso `puedeAnularCredito` o rol `ADMIN` ven el botón **Anular** en créditos
+- Solo usuarios con permiso `puedeAnularCobranza` o rol `ADMIN` ven el botón **Anular** en cobranzas
+
+**Endpoints**
+| Método | Endpoint | Descripción |
+|--------|----------|-------------|
+| DELETE | `/api/creditos/{id}` | Anular un crédito (marca `anulado = true`) |
+| DELETE | `/api/cobranzas/{id}` | Anular una cobranza (marca `anulada = true`) |
+
+**Frontend — botones condicionales**
+- `Creditos.jsx`: el botón **Anular** solo se renderiza si `user.puedeAnularCredito === true \|\| user.rol === 'ADMIN'` y el crédito no está anulado
+- `Cobranzas.jsx`: el botón **Anular** solo se renderiza si `user.puedeAnularCobranza === true \|\| user.rol === 'ADMIN'` y la cobranza no está anulada
+- Ambos muestran un `ConfirmDialog` antes de confirmar la operación
+
+### Redux — slices y thunks
+
+| Slice | Thunks | Estado |
+|-------|--------|--------|
+| `creditosSlice` | `fetchCreditosPorCliente`, `addCredito`, `anularCreditoThunk` | `lista`, `loading`, `error` |
+| `cobranzasSlice` | `fetchCobranzasPorCredito`, `addCobranza`, `anularCobranzaThunk` | `lista`, `loading`, `error` |
+| `permisosSlice` | `fetchUsuarios`, `updatePermisos` | `usuarios`, `loading`, `error` |
+
+### Seguridad — @EnableMethodSecurity
+
+La clase `SecurityConfig` utiliza `@EnableMethodSecurity`, lo que permite proteger endpoints con anotaciones como `@PreAuthorize("hasRole('ADMIN')")` a nivel de método.
+
+### Frontend — nuevas rutas
+
+| Ruta | Componente | Acceso |
+|------|-----------|--------|
+| `/admin/permisos` | `GestorPermisos.jsx` | Solo ADMIN |
+| `/solicitudes` | `SolicitudesAumento.jsx` | Privado |
+
+---
+
 ## Temas de la materia cubiertos
 
 | Unidad | Tema | Implementado en |
