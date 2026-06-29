@@ -63,6 +63,7 @@ public class CreditoServiceImpl implements CreditoService {
             request.getFecha(),
             request.getImporteCuota(),
             request.getCantidadCuotas(),
+            false,
             null
         ));
 
@@ -79,6 +80,19 @@ public class CreditoServiceImpl implements CreditoService {
         cuotaRepository.saveAll(cuotas);
 
         return toResponse(credito, cuotas);
+    }
+
+    @Override
+    @Transactional
+    public CreditoResponse anular(Long id) {
+        Credito credito = creditoRepository.findById(id)
+            .orElseThrow(() -> new ResourceNotFoundException("Crédito", "id", id));
+        if (credito.getAnulado()) {
+            throw new BusinessException("El crédito " + id + " ya está anulado");
+        }
+        credito.setAnulado(true);
+        List<Cuota> cuotas = cuotaRepository.findByIdIdCredito(id);
+        return toResponse(creditoRepository.save(credito), cuotas);
     }
 
     @Override
@@ -119,6 +133,7 @@ public class CreditoServiceImpl implements CreditoService {
             credito.getFecha(),
             credito.getImporteCuota(),
             credito.getCantidadCuotas(),
+            credito.getAnulado(),
             cuotasResponse
         );
     }

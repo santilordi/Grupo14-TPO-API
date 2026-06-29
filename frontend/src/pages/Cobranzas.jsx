@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { fetchCobranzasPorCredito, addCobranza, clearCobranzas } from '../store/slices/cobranzasSlice';
+import { fetchCobranzasPorCredito, addCobranza, clearCobranzas, anularCobranzaThunk } from '../store/slices/cobranzasSlice';
 import ConfirmDialog from '../components/ConfirmDialog';
 
 export default function Cobranzas() {
@@ -15,7 +15,6 @@ export default function Cobranzas() {
   
   const [showPaymentConfirm, setShowPaymentConfirm] = useState(false);
   const [pendingPayment, setPendingPayment] = useState(null);
-  const [cobranzasAnuladas, setCobranzasAnuladas] = useState(() => new Set());
   const [cobranzaPendienteAnular, setCobranzaPendienteAnular] = useState(null);
   const [mensajeAnulacion, setMensajeAnulacion] = useState('');
 
@@ -68,15 +67,17 @@ export default function Cobranzas() {
     setPendingPayment(null);
   };
 
-  const confirmarAnulacion = () => {
+  const confirmarAnulacion = async () => {
     if (!cobranzaPendienteAnular) return;
-    setCobranzasAnuladas((prev) => new Set(prev).add(cobranzaPendienteAnular.id));
-    setMensajeAnulacion(`Pago #${cobranzaPendienteAnular.id} marcado como anulado.`);
+    const result = await dispatch(anularCobranzaThunk(cobranzaPendienteAnular.id));
+    if (anularCobranzaThunk.fulfilled.match(result)) {
+      setMensajeAnulacion(`Pago #${cobranzaPendienteAnular.id} anulado correctamente.`);
+    }
     setCobranzaPendienteAnular(null);
   };
 
   const totalCobrado = lista.reduce(
-    (acc, curr) => (curr.anulada || cobranzasAnuladas.has(curr.id) ? acc : acc + Number(curr.importe)),
+    (acc, curr) => (curr.anulada ? acc : acc + Number(curr.importe)),
     0
   );
 
@@ -158,7 +159,7 @@ export default function Cobranzas() {
                 </thead>
                 <tbody>
                   {lista.map(c => {
-                    const estaAnulada = c.anulada || cobranzasAnuladas.has(c.id);
+                    const estaAnulada = c.anulada;
 
                     return (
                     <tr key={c.id} style={{ backgroundColor: estaAnulada ? '#f1f5f9' : 'transparent', color: estaAnulada ? '#64748b' : 'inherit', opacity: estaAnulada ? 0.7 : 1 }}>
