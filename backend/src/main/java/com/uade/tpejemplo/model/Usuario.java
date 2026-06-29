@@ -34,6 +34,12 @@ public class Usuario implements UserDetails {
     @Column(nullable = false)
     private Rol rol;
 
+    @Column(name = "puede_anular_credito", nullable = false)
+    private Boolean puedeAnularCredito = false;
+
+    @Column(name = "puede_anular_cobranza", nullable = false)
+    private Boolean puedeAnularCobranza = false;
+
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return List.of(new SimpleGrantedAuthority("ROLE_" + rol.name()));

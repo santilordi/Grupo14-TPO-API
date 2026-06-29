@@ -5,9 +5,9 @@ import lombok.Data;
 
 @Data
 @AllArgsConstructor
-public class AuthResponse {
+public class UsuarioResponse {
 
-    private String token;
+    private Long id;
     private String username;
     private String rol;
     private Boolean puedeAnularCredito;
